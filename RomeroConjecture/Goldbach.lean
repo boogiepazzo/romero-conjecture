@@ -20,7 +20,7 @@ variant `rθ N = ∑_{p + q = N, p, q prime} log p * log q`); the Hardy–Little
 predicts `rΛ N ∼ 𝔖(N) · N` for even `N`, with `𝔖` the singular series.  Goldbach's conjecture is
 equivalent to `0 < rθ N` for every even `N > 2` (proved below, `goldbach_iff_rθ_pos`), and
 `rΛ N - rθ N`, the contribution of proper prime powers, is `O(√N log³ N)` (proved below with the
-explicit bound `√N · log₂ N · log² N`, `rΛ_sub_rθ_le`).
+explicit bound `⌊√N⌋ · ⌊log₂ N⌋ · log² N`, `rΛ_sub_rθ_le`).
 
 ## Attribution and history (literature check, November 2026; uncertainty preserved)
 
@@ -63,18 +63,23 @@ explicit bound `√N · log₂ N · log² N`, `rΛ_sub_rθ_le`).
 * `rθ_le_rΛ`, `rθ_le_log_sq_mul_r`, `log_two_sq_mul_r_le_rθ`.
 * `rΛ_sub_rθ_le`   : `rΛ N - rθ N ≤ √N · log₂ N · (log N)²` (with `Nat.sqrt`, `Nat.log 2`),
   and `rΛ_sub_rθ_le_real` with real square root and logarithm.
-* `sum_two_primes_of_rΛ_gt` : if `rΛ N` exceeds that bound then `N` is a sum of two primes.
+* `sum_two_primes_of_rΛ_gt` : if `rΛ N` exceeds that bound then `N` is a sum of two primes;
+  `rΛ_four_lt` shows the hypothesis fails at `N = 4`, so it is a large-`N` criterion.
 * `goldbach_implies_ternary`, `goldbach_iff_three_primes`, `goldbach_iff_primeCentered`:
   classical reductions / reformulations.
-* `goldbach_upTo_bound` : numerical verification of Goldbach for all even `2 < N ≤ goldbachBound`
-  by kernel computation (numerical evidence only, **not** progress on the general statement).
+* `goldbach_upTo_bound` : numerical verification of Goldbach for all even
+  `2 < N ≤ goldbachBound = 10000` by kernel computation (`decide +kernel` on a verified
+  trial-division checker; no `native_decide`).  Numerical evidence only, **not** progress on the
+  general statement.
 
 ## What is NOT proved
 
 * `GoldbachConjecture` itself (open).
-* `HardyLittlewoodLowerBound`, the statement that `rΛ N` exceeds the error term for all even
-  `N > 2` (open; it is *equivalent in strength to more than* Goldbach and is only stated).
-* Any asymptotic formula for `rΛ N`.
+* `TernaryGoldbach` is only derived *conditionally* from `GoldbachConjecture`; Helfgott's
+  unconditional theorem is not formalized here.
+* `HardyLittlewoodLowerBound`, the statement that `rΛ N` exceeds the explicit error term for all
+  sufficiently large even `N` (open; only stated, and shown to imply Goldbach for large even `N`).
+* Any asymptotic formula or nontrivial lower bound for `rΛ N`.
 -/
 
 namespace Goldbach
@@ -107,10 +112,13 @@ def r (N : ℕ) : ℕ := (primePairs N).card
 noncomputable def properPrimePowers (N : ℕ) : Finset ℕ :=
   open Classical in (Icc 1 N).filter fun m => IsPrimePow m ∧ ¬ m.Prime
 
-/-- OPEN, stated only: the weighted count beats the explicit prime-power error term for every
-even `N > 2`.  By `sum_two_primes_of_rΛ_gt` this implies Goldbach's conjecture. -/
+/-- OPEN, stated only, NOT proved: the weighted count beats the explicit prime-power error term
+for every sufficiently large even `N`.  (This would follow from the conjectural Hardy–Littlewood
+asymptotic `rΛ N ∼ 𝔖(N) N`; the inequality is false for small `N`, see `rΛ_four_lt`.)
+By `sum_two_primes_of_rΛ_gt` it implies Goldbach's conjecture for all large even `N`
+(`eventually_goldbach_of_hardyLittlewoodLowerBound`). -/
 def HardyLittlewoodLowerBound : Prop :=
-  ∀ N : ℕ, 2 < N → Even N →
+  ∃ N₀ : ℕ, ∀ N : ℕ, N₀ ≤ N → Even N →
     (Nat.sqrt N : ℝ) * (Nat.log 2 N : ℝ) * Real.log N ^ 2 < rΛ N
 
 /-! ## Basic lemmas -/
@@ -408,9 +416,32 @@ theorem sum_two_primes_of_rΛ_gt {N : ℕ}
   have := rΛ_sub_rθ_le N
   linarith
 
-/-- The (open, unproved) hypothesis `HardyLittlewoodLowerBound` implies Goldbach's conjecture. -/
-theorem goldbach_of_hardyLittlewoodLowerBound (h : HardyLittlewoodLowerBound) :
-    GoldbachConjecture := fun N h2 he => sum_two_primes_of_rΛ_gt (h N h2 he)
+/-- The (open, unproved) hypothesis `HardyLittlewoodLowerBound` implies Goldbach's conjecture
+for all sufficiently large even `N`. -/
+theorem eventually_goldbach_of_hardyLittlewoodLowerBound (h : HardyLittlewoodLowerBound) :
+    ∃ N₀ : ℕ, ∀ N : ℕ, N₀ ≤ N → Even N → ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = N := by
+  obtain ⟨N₀, hN₀⟩ := h
+  exact ⟨N₀, fun N hN he => sum_two_primes_of_rΛ_gt (hN₀ N hN he)⟩
+
+/-- Sanity check: the criterion `sum_two_primes_of_rΛ_gt` is *not* applicable at `N = 4`
+(`rΛ 4 = (log 2)²` is below the error bound `2 · 2 · (log 4)²`), so the hypothesis of
+`HardyLittlewoodLowerBound` can only be expected for large `N`. -/
+theorem rΛ_four_lt : rΛ 4 < (Nat.sqrt 4 : ℝ) * (Nat.log 2 4 : ℝ) * Real.log (4 : ℕ) ^ 2 := by
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have h4 : Real.log ((4 : ℕ) : ℝ) = 2 * Real.log 2 := by
+    rw [show ((4 : ℕ) : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]; norm_num
+  have hs : Nat.sqrt 4 = 2 := Nat.sqrt_eq 2
+  have hl : Nat.log 2 4 = 2 := by
+    rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.log_pow (by norm_num)]
+  have hr : rΛ 4 = Real.log 2 ^ 2 := by
+    have hA : antidiagonal 4 = {(0, 4), (1, 3), (2, 2), (3, 1), (4, 0)} := by decide
+    have h3 : Λ 3 = Real.log 3 := vonMangoldt_apply_prime Nat.prime_three
+    have h2 : Λ 2 = Real.log 2 := vonMangoldt_apply_prime Nat.prime_two
+    rw [rΛ, hA]
+    simp [h2, vonMangoldt_apply_one, sq]
+  rw [hr, h4, hs, hl]
+  push_cast
+  nlinarith [sq_pos_of_pos hlog2]
 
 /-! ## Classical reductions and reformulations -/
 
@@ -571,3 +602,27 @@ theorem goldbach_upTo_bound (N : ℕ) (h2 : 2 < N) (he : Even N) (hN : N ≤ gol
   rwa [show 2 * (k - 2) + 4 = k + k by omega] at this
 
 end Goldbach
+
+/-! ## Axiom audit -/
+
+#print axioms Goldbach.rΛ_pos_iff
+#print axioms Goldbach.rθ_pos_iff
+#print axioms Goldbach.r_pos_iff
+#print axioms Goldbach.goldbach_iff_rθ_pos
+#print axioms Goldbach.goldbach_iff_r_pos
+#print axioms Goldbach.GoldbachConjecture.rΛ_pos
+#print axioms Goldbach.rθ_le_rΛ
+#print axioms Goldbach.rθ_le_log_sq_mul_r
+#print axioms Goldbach.log_two_sq_mul_r_le_rθ
+#print axioms Goldbach.card_properPrimePowers_le
+#print axioms Goldbach.rΛ_sub_rθ_le_card
+#print axioms Goldbach.rΛ_sub_rθ_le
+#print axioms Goldbach.rΛ_sub_rθ_le_real
+#print axioms Goldbach.sum_two_primes_of_rΛ_gt
+#print axioms Goldbach.eventually_goldbach_of_hardyLittlewoodLowerBound
+#print axioms Goldbach.rΛ_four_lt
+#print axioms Goldbach.goldbach_implies_ternary
+#print axioms Goldbach.goldbach_iff_three_primes
+#print axioms Goldbach.goldbach_iff_primeCentered
+#print axioms Goldbach.checkUpTo_goldbachBound
+#print axioms Goldbach.goldbach_upTo_bound
