@@ -21,7 +21,7 @@ are known theorems re-formalized here; they are not new mathematics.
 | Hot spots conjecture (Rauch, 1974), heat conduction | `HotSpots.lean` | [#3](https://github.com/boogiepazzo/romero-conjecture/issues/3) | Zero mean and sign change of Neumann eigenfunctions; the interval case in full |
 | Goldbach's conjecture (1742), von Mangoldt-weighted form | `Goldbach.lean` | [#5](https://github.com/boogiepazzo/romero-conjecture/issues/5) | Positivity criteria for the weighted counts; explicit bound on the prime-power contribution; equivalent forms; verification to 10⁴ (evidence only) |
 | Legendre's conjecture, Chebyshev θ / ψ form | `Legendre.lean` | [#6](https://github.com/boogiepazzo/romero-conjecture/issues/6) | θ, ψ and prime-counting reformulations; Oppermann ⇒ Legendre; Andrica ⇒ Legendre; Legendre ⇒ gap ≤ 4√p + 1; verification for n ≤ 20000 (evidence only) |
-| Pólya's eigenvalue conjecture (1954/61), heat equation | `Polya.lean` (not yet in the library) | [#8](https://github.com/boogiepazzo/romero-conjecture/issues/8) | In progress |
+| Pólya's eigenvalue conjecture (1954/61), heat equation | `Polya.lean` | [#8](https://github.com/boogiepazzo/romero-conjecture/issues/8) | The interval case in full (classical formulation); lattice-point bound for the rectangle's model spectrum; product sines are eigenfunctions of the rectangle |
 
 All files live in `RomeroConjecture/`.
 
@@ -43,9 +43,15 @@ these guarantees.
 - **Statement fidelity.** `HotSpots.lean` uses a weak (variational) Neumann
   formulation because mathlib has no Sobolev spaces; its equivalence with the
   standard definition is argued informally in the header, not formalized.
+  `Polya.lean` uses classical Dirichlet eigenfunctions and a counting bound
+  over linearly independent families; on domains with irregular boundary
+  points this can differ from the textbook spectrum. Its rectangle result is
+  for the explicit model spectrum, without a completeness theorem.
 - **Open status.** Each issue records a brief literature check, not an
   exhaustive one. For the hot spots conjecture, several unrefereed 2026
-  preprints claim large parts of the planar case; see issue #3.
+  preprints claim large parts of the planar case; see issue #3. Likewise an
+  unrefereed October 2026 preprint claims Pólya's inequality for simply
+  connected planar domains; see issue #8.
 - **Attribution and priority.** File headers and issues record who formulated
   each conjecture, who proved the special cases re-formalized here, and where
   dates or attributions are uncertain or rest on secondary sources (for example

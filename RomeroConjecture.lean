@@ -5,3 +5,4 @@ import RomeroConjecture.JesmanowiczAllN
 import RomeroConjecture.Goldbach
 import RomeroConjecture.JesmanowiczFamilies
 import RomeroConjecture.Legendre
+import RomeroConjecture.Polya

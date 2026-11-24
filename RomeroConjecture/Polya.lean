@@ -1,5 +1,159 @@
 import Mathlib
 
+/-!
+# Pólya's eigenvalue conjecture (Dirichlet version)
+
+**STATUS: IN PROGRESS / NOT YET SOLVED.**
+This file contains a formal *statement* of Pólya's conjecture and machine-checked proofs of some
+elementary partial results (the interval in a classical formulation; the lattice-point inequality
+behind the rectangle).  It does **not** prove the conjecture, and does not claim to.
+
+## The mathematics
+
+Let `Ω ⊂ ℝᵈ` be a bounded open set, `0 < λ₁ ≤ λ₂ ≤ …` the eigenvalues (with multiplicity) of the
+Dirichlet Laplacian `-Δ` on `Ω`, and `N_Ω(λ) = #{k : λ_k ≤ λ}` the counting function.  Weyl's law
+says `N_Ω(λ) ~ ω_d |Ω| λ^{d/2} / (2π)^d` as `λ → ∞`, where `ω_d` is the volume of the unit ball.
+
+**Conjecture (G. Pólya).**  For every bounded open `Ω ⊂ ℝᵈ` and every `λ ≥ 0`,
+`N_Ω(λ) ≤ ω_d |Ω| λ^{d/2} / (2π)^d`; equivalently `λ_k ≥ 4π² (k / (ω_d |Ω|))^{2/d}` for all `k`.
+In the plane: `N_Ω(λ) ≤ |Ω| λ / (4π)`, i.e. `λ_k ≥ 4π k / |Ω|`.
+(There is a companion conjecture with the reverse inequality for Neumann eigenvalues; it is not
+treated here.)
+
+## Status in the literature (checked by a few web searches, November 2026 — see caveats)
+
+Attribution/dating.  Recent papers (e.g. Filonov–Levitin–Polterovich–Sher) date the conjecture to
+G. Pólya, *Mathematics and Plausible Reasoning* (Princeton, 1954); others cite
+G. Pólya, *On the eigenvalues of vibrating membranes*, Proc. London Math. Soc. (3) 11 (1961),
+419–433, where it is **proved for planar domains that tile the plane** (Dirichlet case; the
+Neumann case under extra assumptions).  We did not consult the originals, so the precise place
+where the conjecture is first *stated* for arbitrary domains is recorded here with uncertainty.
+
+* Tiling domains: Pólya 1961 (Dirichlet); R. Kellner 1966 removed Pólya's extra assumptions in
+  the Neumann case (reported as "On a theorem of Pólya", Amer. Math. Monthly 73 (1966) — title
+  and journal from memory, **not** confirmed by our search); N. Filonov, arXiv:2006.10663,
+  treats the Neumann case for all tiling sets.
+* Weaker universal bounds: F. A. Berezin (1972) and P. Li, S.-T. Yau (Comm. Math. Phys. 1983):
+  `λ_k ≥ (d/(d+2)) · 4π² (k / (ω_d |Ω|))^{2/d}`, i.e. Pólya's bound up to the factor `d/(d+2)`
+  (the years are the commonly quoted ones; only the names were confirmed by our search).
+* Products: A. Laptev, J. Funct. Anal. 151 (1997): if Pólya (Dirichlet) holds for
+  `Ω₁ ⊂ ℝ^{d₁}`, `d₁ ≥ 2`, then it holds for `Ω₁ × Ω₂` for every bounded `Ω₂`.
+* Balls: N. Filonov, M. Levitin, I. Polterovich, D. Sher, *Pólya's conjecture for Euclidean
+  balls*, Invent. Math. 234 (2023), 129–169 — the disk, planar sectors, and (Dirichlet) balls in
+  every dimension; the Neumann disk case there uses a computer-assisted step.  Same authors:
+  *Pólya's conjecture for Dirichlet eigenvalues of annuli*, J. London Math. Soc. 113 (2026),
+  e70425 (arXiv:2505.21737) — first non-simply-connected planar examples.
+* 2026 preprints listed on MathWorld's "Pólya Eigenvalue Conjecture" page, which we have **not**
+  verified and treat as unconfirmed: Dai–Sun arXiv:2610.05146 (Neumann, annuli); Y. Li
+  arXiv:2610.27707 and arXiv:2610.31464 (spherical shells); Dai–Zhao arXiv:2611.13910 (hyperbolic
+  balls); and, most notably, Q. Tang, Z. Wang, *Strict Dirichlet Pólya inequality for simply
+  connected planar domains*, arXiv:2610.13139 (9 Oct 2026), claiming the Dirichlet inequality for
+  **every bounded simply connected planar domain** (and a Neumann companion for Lipschitz ones),
+  with acknowledged ChatGPT assistance and Lean formalisations produced with Aristotle/Codex.
+  According to MathWorld (as of Oct 2026) no independent specialist review of the complete
+  argument had been reported.  We could not confirm any refereed acceptance.
+* What is open: as far as we could determine, **the conjecture for general bounded domains (any
+  `d ≥ 2`) is open**; nobody claims the general case.  Even if the Tang–Wang preprint is correct,
+  multiply connected planar domains and all dimensions `d ≥ 3` remain open.
+
+## Formalisation choices and their limits
+
+Mathlib has no Sobolev spaces and no spectral theory of the Dirichlet Laplacian, so there is no
+enumerated spectrum `λ_k` to talk about.  We use:
+
+* `IsDirichletEigenfunction Ω μ u` — a **classical** eigenfunction: `u` is `C²` in `Ω`,
+  continuous on `closure Ω`, zero on `frontier Ω`, not identically zero on `Ω`, and
+  `Δ u = -μ u` pointwise in `Ω` (`Δ` is Mathlib's `InnerProductSpace.laplacian`).
+* `CountingBound Ω lam B` — "`N_Ω(lam) ≤ B`" without an enumerated spectrum: every finite family
+  of eigenfunctions with eigenvalues `≤ lam` whose *restrictions to `Ω`* are linearly independent
+  has at most `B` members.  (Restricting to `Ω` matters: the values of `u` off `closure Ω` are
+  unconstrained.)  For a self-adjoint operator with discrete spectrum, the largest such family
+  has exactly `N(lam)` members, which is the (informal, unformalised) justification.
+* `polyaBound d Ω lam = ω_d |Ω| lam^{d/2} / (2π)^d` with `ω_d = volume (ball 0 1)` and
+  `|Ω| = volume Ω` in `EuclideanSpace ℝ (Fin d)`.
+
+Fidelity caveats (none of the following facts is formalised; they are the informal justification):
+
+* A classical eigenfunction on a bounded open set lies in `H¹₀(Ω)` and is an eigenfunction of the
+  Friedrichs (form) Dirichlet Laplacian.  Conversely, form eigenfunctions are real-analytic in
+  `Ω`, but they extend continuously by zero to the boundary only at *regular* boundary points
+  (Wiener criterion).  So for domains all of whose boundary points are regular (Lipschitz
+  domains, convex domains, simply connected planar domains, …) the
+  definition agrees with the textbook one.  For irregular domains (e.g. a punctured disc, whose
+  form eigenfunctions are those of the disc and do not all vanish at the puncture) there are
+  *fewer* classical eigenfunctions, so `CountingBound` is *weaker* there.  Hence
+  `PolyaConjecture` below is implied by the textbook conjecture, and coincides with it when
+  restricted to boundary-regular domains; it is not literally the same statement on arbitrary
+  bounded open sets.  (By domain monotonicity/approximation the textbook conjecture for all
+  bounded open sets is expected to reduce to nice domains, but that is not formalised either.)
+* No existence theory is formalised.  If some `Ω` had no classical eigenfunctions the inequality
+  would hold vacuously for it.  Non-vacuity is checked only for rectangles
+  (`prodSin_isDirichletEigenfunction`).
+* The equivalent eigenvalue form `λ_k ≥ 4π² (k/(ω_d|Ω|))^{2/d}` is not stated formally (no
+  enumeration of the spectrum is available).
+* `d = 0` is excluded from `PolyaConjecture` (it is a degenerate, trivially true case).
+
+## What is proved in this file (no `sorry`, no axioms beyond the standard three)
+
+About the abstract statement:
+* `unitBallVolume_one/two/three` : `ω₁ = 2`, `ω₂ = π`, `ω₃ = 4π/3`.
+* `polyaBound_two` and `polyaConjecturePlanar_iff` : the planar form `|Ω| λ / (4π)` is literally
+  the case `d = 2`.
+* `polyaBound_nonneg`, `polyaBound_mono_lam`, `polyaBound_mono_set`, `CountingBound.mono`.
+* `polyaBound_smul` : scale invariance `polyaBound d (c • Ω) (λ / c²) = polyaBound d Ω λ`
+  (of the *bound* only; the corresponding rescaling of eigenfunctions is not formalised).
+* `PolyaConjectureDim.liYauBound` : the (unproved) conjecture formally implies the (unproved
+  here) Li–Yau-type statement `LiYauBound d` — a consistency check, nothing more.
+* `polyaInequality_empty` : sanity check, the inequality holds for `Ω = ∅`.
+
+The interval `(0, L)` in a **classical one-dimensional formulation**
+(`IsDirichletEigenfunctionInterval`: `u'' = -μ u` on `[0, L]` with one-sided derivatives,
+`u 0 = u L = 0`, `u ≢ 0`) — a complete treatment:
+* `sin_isDirichletEigenfunctionInterval` : `sin (k π x / L)` is an eigenfunction for `(kπ/L)²`.
+* `eq_zero_of_ode`, `eq_sin_of_ode` : ODE uniqueness by the energy method.
+* `IsDirichletEigenfunctionInterval.pos` : every eigenvalue is `> 0`.
+* `IsDirichletEigenfunctionInterval.exists_nat` : every eigenfunction is `c sin (k π x / L)` on
+  `[0, L]` with `k ≥ 1`, `c ≠ 0`, and eigenvalue `(kπ/L)²`.
+* `exists_isDirichletEigenfunctionInterval_iff` : the spectrum is exactly `{(kπ/L)² : k ≥ 1}`.
+* `card_le_floor_interval`, `polya_interval` : **Pólya's inequality for intervals**: any `N`
+  eigenfunctions with eigenvalues `≤ λ`, linearly independent on `[0, L]`, satisfy
+  `N ≤ ⌊L√λ/π⌋ ≤ L√λ/π = ω₁ L λ^{1/2}/(2π)` (`intervalBound_eq`).
+
+"Model spectrum" theorems.  These are statements about explicit sets of integers; they do **not**
+depend on (and are not connected by a completeness theorem to) the abstract eigenfunction
+definition:
+* `ncard_intervalModel`, `ncard_intervalModel_le` :
+  `#{k ≥ 1 : (kπ/L)² ≤ λ} = ⌊L√λ/π⌋ ≤ L√λ/π`.
+* `integral_sqrt_one_sub_sq_zero_one` : `∫₀¹ √(1 - x²) dx = π/4`.
+* `ncard_ellipseLattice_le` : `#{(m,n) ∈ ℕ₊² : m²/a² + n²/b² ≤ R} ≤ π a b R / 4`
+  (sum–integral comparison for the antitone profile `b √(R - t²/a²)`).
+* `ncard_quarterDisc_le` : `#{(m,n) ∈ ℕ₊² : m² + n² ≤ r²} ≤ π r² / 4`.
+* `ncard_rectangleModel_le`, `ncard_squareModel_le`, `ncard_rectangleModel_le_polyaBound` :
+  `#{(m,n) ∈ ℕ₊² : π²(m²/a² + n²/b²) ≤ λ} ≤ a b λ / (4π) = polyaBound 2 (rect a b) λ`.
+
+The rectangle `rect a b = (0,a) × (0,b) ⊂ ℝ²` in the abstract sense:
+* `isOpen_rect`, `isBounded_rect`, `volume_rect`, `frontier_rect_subset`.
+* `laplacian_prodSin` : `Δ (sin(αx) sin(βy)) = -(α² + β²) sin(αx) sin(βy)`.
+* `prodSin_isDirichletEigenfunction` : `sin(mπx/a) sin(nπy/b)` (`m, n ≥ 1`) **is** an
+  `IsDirichletEigenfunction` of `rect a b` with eigenvalue `π²(m²/a² + n²/b²)`.
+
+## What is NOT proved
+
+* `PolyaConjecture`, `PolyaConjectureDim d`, `PolyaConjecturePlanar` — only stated, as `Prop`s.
+* `LiYauBound d` — a known theorem (for the genuine spectrum), only stated here.
+* `PolyaInequality (rect a b)` in the abstract sense is **not** proved: that would need the
+  completeness of the product eigenfunctions `sin sin` (that there are no other eigenfunctions),
+  which is not formalised.  What is proved is the inequality for the model spectrum plus the fact
+  that the model functions are abstract eigenfunctions.  (Rectangles tile the plane, so this case
+  is covered by Pólya's 1961 theorem in the literature.)
+* The one-dimensional result is proved for the classical formulation on `ℝ`
+  (`IsDirichletEigenfunctionInterval`), not for `IsDirichletEigenfunction` on subsets of
+  `EuclideanSpace ℝ (Fin 1)`; the two are not linked here.  The 1D class asks for two one-sided
+  derivatives up to the endpoints, which is automatic for genuine eigenfunctions but is a
+  (harmless) extra assumption relative to "`C²` inside, continuous up to the boundary".
+* No disk/ball/annulus result, no tiling argument, no Weyl law, no Neumann version.
+-/
+
 open MeasureTheory Set Real
 open scoped InnerProductSpace ContDiff Pointwise
 open Laplacian
@@ -141,6 +295,14 @@ theorem PolyaConjectureDim.liYauBound (hd : 1 ≤ d) (h : PolyaConjectureDim d) 
     one_le_rpow h1 (by positivity)
   have := polyaBound_nonneg Ω hl
   nlinarith
+
+/-- Sanity check: Pólya's inequality holds (trivially) for the empty set. -/
+theorem polyaInequality_empty : PolyaInequality (∅ : Set (EuclideanSpace ℝ (Fin d))) := by
+  intro lam hl N u μ hu _ _
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simpa using polyaBound_nonneg _ hl
+  · obtain ⟨x, hx, -⟩ := (hu ⟨0, hN⟩).ne_zero
+    exact hx.elim
 
 end Abstract
 
@@ -520,4 +682,262 @@ theorem polya_interval (hL : 0 < L) {lam : ℝ} {N : ℕ} (u : Fin N → ℝ →
 
 end Interval
 
+/-! ## The rectangle `(0, a) × (0, b)`: explicit eigenfunctions and the model spectrum -/
+
+section Rect
+
+/-- `sin (α x₀) sin (β x₁)` on `ℝ²`. -/
+noncomputable def prodSin (α β : ℝ) (x : EuclideanSpace ℝ (Fin 2)) : ℝ := sin (α * x 0) * sin (β * x 1)
+
+theorem hasFDerivAt_prodSin (α β : ℝ) (x : EuclideanSpace ℝ (Fin 2)) :
+    HasFDerivAt (prodSin α β)
+      ((α * cos (α * x 0) * sin (β * x 1)) • (EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) +
+        (β * sin (α * x 0) * cos (β * x 1)) • (EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ)) x := by
+  have h0 : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 2) => y 0) (EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) x :=
+    (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 2) 0).hasFDerivAt
+  have h1 : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 2) => y 1) (EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) x :=
+    (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 2) 1).hasFDerivAt
+  have := ((h0.const_mul α).sin).mul ((h1.const_mul β).sin)
+  convert this using 1
+  · rfl
+  · ext v
+    simp
+    ring
+
+theorem laplacian_prodSin (α β : ℝ) (x : EuclideanSpace ℝ (Fin 2)) :
+    Δ (prodSin α β) x = -(α ^ 2 + β ^ 2) * prodSin α β x := by
+  have hfd : fderiv ℝ (prodSin α β) = fun x : EuclideanSpace ℝ (Fin 2) =>
+      (α * cos (α * x 0) * sin (β * x 1)) • (EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) +
+        (β * sin (α * x 0) * cos (β * x 1)) • (EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) :=
+    funext fun x => (hasFDerivAt_prodSin α β x).fderiv
+  have h0 : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 2) => y 0) (EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) x :=
+    (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 2) 0).hasFDerivAt
+  have h1 : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 2) => y 1) (EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) x :=
+    (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 2) 1).hasFDerivAt
+  have h2 : HasFDerivAt (fun x : EuclideanSpace ℝ (Fin 2) =>
+      (α * cos (α * x 0) * sin (β * x 1)) • (EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) +
+        (β * sin (α * x 0) * cos (β * x 1)) • (EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ)) _ x :=
+    ((((h0.const_mul α).cos.const_mul α).mul (h1.const_mul β).sin).smul_const
+      (EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ)).add
+    ((((h0.const_mul α).sin.const_mul β).mul (h1.const_mul β).cos).smul_const
+      (EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ))
+  rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _
+    (EuclideanSpace.basisFun (Fin 2) ℝ)]
+  simp only [iteratedFDeriv_two_apply, hfd, Fin.sum_univ_two]
+  rw [h2.fderiv]
+  simp [prodSin]
+  ring
+
+theorem contDiff_prodSin (α β : ℝ) {n : WithTop ℕ∞} : ContDiff ℝ n (prodSin α β) := by
+  unfold prodSin; fun_prop
+
+/-- The open rectangle `(0, a) × (0, b)` in `ℝ²`. -/
+def rect (a b : ℝ) : Set (EuclideanSpace ℝ (Fin 2)) := {x | x 0 ∈ Ioo 0 a ∧ x 1 ∈ Ioo 0 b}
+
+theorem isOpen_rect (a b : ℝ) : IsOpen (rect a b) := by
+  have h0 : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 0 := by fun_prop
+  have h1 : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 1 := by fun_prop
+  exact (isOpen_Ioo.preimage h0).inter (isOpen_Ioo.preimage h1)
+
+theorem frontier_rect_subset (a b : ℝ) :
+    frontier (rect a b) ⊆ {x | x 0 = 0 ∨ x 0 = a ∨ x 1 = 0 ∨ x 1 = b} := by
+  intro x hx
+  have h0 : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 0 := by fun_prop
+  have h1 : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 1 := by fun_prop
+  have hcl : IsClosed {x : EuclideanSpace ℝ (Fin 2) | x 0 ∈ Icc 0 a ∧ x 1 ∈ Icc 0 b} :=
+    (isClosed_Icc.preimage h0).inter (isClosed_Icc.preimage h1)
+  have hsub : rect a b ⊆ {x : EuclideanSpace ℝ (Fin 2) | x 0 ∈ Icc 0 a ∧ x 1 ∈ Icc 0 b} := fun y hy =>
+    ⟨Ioo_subset_Icc_self hy.1, Ioo_subset_Icc_self hy.2⟩
+  have hx1 := closure_minimal hsub hcl hx.1
+  have hx2 : x ∉ rect a b := by
+    have := hx.2
+    rwa [(isOpen_rect a b).interior_eq] at this
+  simp only [rect, mem_ofPred_eq, mem_Ioo, mem_Icc] at hx1 hx2 ⊢
+  by_contra hcon
+  push Not at hcon
+  obtain ⟨c1, c2, c3, c4⟩ := hcon
+  exact hx2 ⟨⟨lt_of_le_of_ne hx1.1.1 (Ne.symm c1), lt_of_le_of_ne hx1.1.2 c2⟩,
+    lt_of_le_of_ne hx1.2.1 (Ne.symm c3), lt_of_le_of_ne hx1.2.2 c4⟩
+
+theorem isBounded_rect (a b : ℝ) : Bornology.IsBounded (rect a b) := by
+  refine (Metric.isBounded_closedBall (x := (0 : EuclideanSpace ℝ (Fin 2))) (r := |a| + |b|)).subset fun x hx => ?_
+  rw [mem_closedBall_zero_iff, EuclideanSpace.norm_eq, Fin.sum_univ_two]
+  obtain ⟨⟨h1, h2⟩, h3, h4⟩ := hx
+  have ha : |a| = a := abs_of_pos (h1.trans h2)
+  have hb : |b| = b := abs_of_pos (h3.trans h4)
+  rw [ha, hb, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs, sq_abs]
+  refine Real.sqrt_le_iff.2 ⟨by linarith, ?_⟩
+  nlinarith
+
+theorem volume_rect {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) : (volume (rect a b)).toReal = a * b := by
+  rw [← (PiLp.volume_preserving_toLp (Fin 2)).measure_preimage
+    (isOpen_rect a b).measurableSet.nullMeasurableSet]
+  have : WithLp.toLp 2 ⁻¹' rect a b = univ.pi fun i : Fin 2 => Ioo (![0, 0] i) (![a, b] i) := by
+    ext f
+    simp [rect, Fin.forall_fin_two]
+  rw [this, Real.volume_pi_Ioo]
+  simp [Fin.prod_univ_two, ENNReal.toReal_mul, ha, hb]
+
+/-- **The products `sin (m π x / a) sin (n π y / b)` are Dirichlet eigenfunctions of the
+rectangle in the abstract sense of `IsDirichletEigenfunction`**, with eigenvalue
+`π² (m²/a² + n²/b²)`. -/
+theorem prodSin_isDirichletEigenfunction {a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m n : ℕ}
+    (hm : 1 ≤ m) (hn : 1 ≤ n) :
+    IsDirichletEigenfunction (rect a b) (π ^ 2 * ((m : ℝ) ^ 2 / a ^ 2 + (n : ℝ) ^ 2 / b ^ 2))
+      (prodSin (m * π / a) (n * π / b)) where
+  contDiffOn := (contDiff_prodSin _ _).contDiffOn
+  continuousOn := (contDiff_prodSin _ _ (n := 0)).continuous.continuousOn
+  boundary := by
+    intro x hx
+    have h1 : sin (m * π / a * a) = 0 := by
+      rw [div_mul_cancel₀ _ ha.ne']; exact sin_nat_mul_pi m
+    have h2 : sin (n * π / b * b) = 0 := by
+      rw [div_mul_cancel₀ _ hb.ne']; exact sin_nat_mul_pi n
+    rcases frontier_rect_subset a b hx with h | h | h | h <;> simp [prodSin, h, h1, h2]
+  ne_zero := by
+    have hm' : (0 : ℝ) < m := by exact_mod_cast hm
+    have hn' : (0 : ℝ) < n := by exact_mod_cast hn
+    refine ⟨!₂[a / (2 * m), b / (2 * n)], ⟨⟨by simp; positivity, ?_⟩, ⟨by simp; positivity, ?_⟩⟩, ?_⟩
+    · have : (1 : ℝ) ≤ m := by exact_mod_cast hm
+      simp only [Fin.isValue, Matrix.cons_val_zero]
+      rw [div_lt_iff₀ (by positivity)]
+      nlinarith
+    · have : (1 : ℝ) ≤ n := by exact_mod_cast hn
+      simp only [Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+      rw [div_lt_iff₀ (by positivity)]
+      nlinarith
+    · have e1 : m * π / a * (a / (2 * m)) = π / 2 := by field_simp
+      have e2 : n * π / b * (b / (2 * n)) = π / 2 := by field_simp
+      simp [prodSin, e1, e2]
+  eigen := by
+    intro x _
+    rw [laplacian_prodSin]
+    congr 1
+    field_simp
+
+/-- Hence every model value `π² (m²/a² + n²/b²)`, `m, n ≥ 1`, is a Dirichlet eigenvalue of the
+rectangle in the abstract sense.  (The converse — that there are no others, and the
+multiplicities — is *not* proved here.) -/
+theorem exists_isDirichletEigenfunction_rect {a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m n : ℕ}
+    (hm : 1 ≤ m) (hn : 1 ≤ n) :
+    ∃ u, IsDirichletEigenfunction (rect a b)
+      (π ^ 2 * ((m : ℝ) ^ 2 / a ^ 2 + (n : ℝ) ^ 2 / b ^ 2)) u :=
+  ⟨_, prodSin_isDirichletEigenfunction ha hb hm hn⟩
+
+/-- The model Dirichlet spectrum of the rectangle, as an index set: pairs `(m, n)` of positive
+integers with `π² (m²/a² + n²/b²) ≤ lam`. -/
+def rectangleModel (a b lam : ℝ) : Set (ℕ × ℕ) :=
+  {p | 1 ≤ p.1 ∧ 1 ≤ p.2 ∧ π ^ 2 * ((p.1 : ℝ) ^ 2 / a ^ 2 + (p.2 : ℝ) ^ 2 / b ^ 2) ≤ lam}
+
+theorem rectangleModel_eq (a b lam : ℝ) :
+    rectangleModel a b lam = ellipseLattice a b (lam / π ^ 2) := by
+  have hpi : (0 : ℝ) < π ^ 2 := by have := pi_pos; positivity
+  ext p
+  simp only [rectangleModel, ellipseLattice, mem_ofPred_eq]
+  rw [le_div_iff₀' hpi]
+
+theorem rectangleModel_finite {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (lam : ℝ) :
+    (rectangleModel a b lam).Finite := by
+  rw [rectangleModel_eq]; exact ellipseLattice_finite ha hb
+
+/-- **Pólya's inequality for the model spectrum of a rectangle**:
+`#{(m, n) ∈ ℕ₊² : π² (m²/a² + n²/b²) ≤ λ} ≤ a b λ / (4π)`. -/
+theorem ncard_rectangleModel_le {a b lam : ℝ} (ha : 0 < a) (hb : 0 < b) (hlam : 0 ≤ lam) :
+    ((rectangleModel a b lam).ncard : ℝ) ≤ a * b * lam / (4 * π) := by
+  have hpi := pi_pos
+  rw [rectangleModel_eq]
+  refine (ncard_ellipseLattice_le ha hb (by positivity)).trans_eq ?_
+  field_simp
+
+/-- The same, phrased with the Pólya quantity of the actual rectangle in `ℝ²`. -/
+theorem ncard_rectangleModel_le_polyaBound {a b lam : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hlam : 0 ≤ lam) :
+    ((rectangleModel a b lam).ncard : ℝ) ≤ polyaBound 2 (rect a b) lam := by
+  rw [polyaBound_two, volume_rect ha.le hb.le]
+  exact ncard_rectangleModel_le ha hb hlam
+
+/-- Square of side `a`: `#{(m, n) ∈ ℕ₊² : π² (m² + n²) / a² ≤ λ} ≤ a² λ / (4π)`. -/
+theorem ncard_squareModel_le {a lam : ℝ} (ha : 0 < a) (hlam : 0 ≤ lam) :
+    ((rectangleModel a a lam).ncard : ℝ) ≤ a ^ 2 * lam / (4 * π) := by
+  have := ncard_rectangleModel_le ha ha hlam
+  rwa [← sq] at this
+
+end Rect
+
+/-! ## The model spectrum of an interval -/
+
+section IntervalModel
+
+/-- The model Dirichlet spectrum of `(0, L)` as an index set: `k ≥ 1` with `(kπ/L)² ≤ lam`. -/
+def intervalModel (L lam : ℝ) : Set ℕ := {k | 1 ≤ k ∧ ((k : ℝ) * π / L) ^ 2 ≤ lam}
+
+theorem intervalModel_eq {L : ℝ} (hL : 0 < L) (lam : ℝ) :
+    intervalModel L lam = ↑(Finset.Icc 1 ⌊L * √lam / π⌋₊) := by
+  have hpi := pi_pos
+  ext k
+  simp only [intervalModel, mem_ofPred_eq, Finset.coe_Icc, mem_Icc]
+  refine and_congr_right fun hk => ?_
+  have hk' : (0 : ℝ) < k := by exact_mod_cast hk
+  have h0 : 0 ≤ L * √lam / π := by positivity
+  rw [Nat.le_floor_iff h0, le_div_iff₀ hpi, ← Real.le_sqrt' (by positivity), div_le_iff₀ hL,
+    mul_comm L]
+
+/-- The counting function of the model spectrum of an interval is exactly `⌊L √λ / π⌋`. -/
+theorem ncard_intervalModel {L : ℝ} (hL : 0 < L) (lam : ℝ) :
+    (intervalModel L lam).ncard = ⌊L * √lam / π⌋₊ := by
+  rw [intervalModel_eq hL, Set.ncard_coe_finset]; simp
+
+/-- **Pólya's inequality for the model spectrum of an interval**: `N(λ) ≤ L √λ / π`. -/
+theorem ncard_intervalModel_le {L : ℝ} (hL : 0 < L) (lam : ℝ) :
+    ((intervalModel L lam).ncard : ℝ) ≤ L * √lam / π := by
+  rw [ncard_intervalModel hL]
+  exact Nat.floor_le (by have := pi_pos; positivity)
+
+theorem unitBallVolume_one : unitBallVolume 1 = 2 := by
+  have := InnerProductSpace.volume_ball_of_dim_odd (E := EuclideanSpace ℝ (Fin 1)) (k := 0)
+    (by simp) 0 1
+  simp [unitBallVolume, this]
+
+/-- `L √λ / π` is the Pólya quantity `ω₁ L λ^{1/2} / (2π)¹` of a one-dimensional domain of
+length `L`. -/
+theorem intervalBound_eq (L lam : ℝ) :
+    L * √lam / π = unitBallVolume 1 * L * lam ^ (((1 : ℕ) : ℝ) / 2) / (2 * π) ^ 1 := by
+  have := pi_pos
+  rw [unitBallVolume_one, sqrt_eq_rpow]
+  field_simp
+  simp
+
+end IntervalModel
+
 end Polya
+
+#print axioms Polya.unitBallVolume_one
+#print axioms Polya.unitBallVolume_two
+#print axioms Polya.unitBallVolume_three
+#print axioms Polya.polyaBound_two
+#print axioms Polya.polyaConjecturePlanar_iff
+#print axioms Polya.polyaBound_mono_lam
+#print axioms Polya.polyaBound_mono_set
+#print axioms Polya.polyaBound_smul
+#print axioms Polya.PolyaConjectureDim.liYauBound
+#print axioms Polya.polyaInequality_empty
+#print axioms Polya.integral_sqrt_one_sub_sq_zero_one
+#print axioms Polya.ncard_ellipseLattice_le
+#print axioms Polya.ncard_quarterDisc_le
+#print axioms Polya.sin_isDirichletEigenfunctionInterval
+#print axioms Polya.eq_zero_of_ode
+#print axioms Polya.eq_sin_of_ode
+#print axioms Polya.IsDirichletEigenfunctionInterval.pos
+#print axioms Polya.IsDirichletEigenfunctionInterval.exists_nat
+#print axioms Polya.exists_isDirichletEigenfunctionInterval_iff
+#print axioms Polya.card_le_floor_interval
+#print axioms Polya.polya_interval
+#print axioms Polya.laplacian_prodSin
+#print axioms Polya.volume_rect
+#print axioms Polya.prodSin_isDirichletEigenfunction
+#print axioms Polya.ncard_rectangleModel_le
+#print axioms Polya.ncard_rectangleModel_le_polyaBound
+#print axioms Polya.ncard_squareModel_le
+#print axioms Polya.ncard_intervalModel
+#print axioms Polya.ncard_intervalModel_le
+#print axioms Polya.intervalBound_eq
