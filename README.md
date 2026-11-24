@@ -14,7 +14,7 @@ All proved statements are `sorry`-free and depend only on the standard axioms
 
 | # | Conjecture | File | Status |
 |---|------------|------|--------|
-| 1 | Jeśmanowicz' conjecture (1956) | `RomeroConjecture/Jesmanowicz.lean` | IN PROGRESS / NOT YET SOLVED |
+| 1 | Jeśmanowicz' conjecture (1956) | `RomeroConjecture/Jesmanowicz.lean`, `RomeroConjecture/JesmanowiczAllN.lean` | IN PROGRESS / NOT YET SOLVED. Proved: triple (3,4,5) for all n; (5,12,13) for n = 1 (known results, re-formalized) |
 | 2 | Elliott–Halberstam conjecture (1968) | `RomeroConjecture/ElliottHalberstam.lean` | IN PROGRESS / NOT YET SOLVED |
 | 3 | Hot spots conjecture (Rauch, 1974) | `RomeroConjecture/HotSpots.lean` | IN PROGRESS / NOT YET SOLVED |
 

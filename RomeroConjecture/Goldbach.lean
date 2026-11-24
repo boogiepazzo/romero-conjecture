@@ -485,32 +485,38 @@ theorem goldbach_iff_primeCentered : GoldbachConjecture ↔ PrimeCentered := by
 This is **numerical evidence only** (and a tiny fraction of the `4·10¹⁸` range verified by
 Oliveira e Silva, Herzog and Pardi); it is no progress towards the general statement. -/
 
-/-- `noDivFrom n d f = true` implies that no `m ≥ d` with `m * m ≤ n` divides `n`
-(`f` is fuel; running out of fuel returns `false`). -/
+/-- `noDivFrom n d f = true` implies that no `m ≥ d` of the same parity as `d` with
+`m * m ≤ n` divides `n` (`f` is fuel; running out of fuel returns `false`). -/
 def noDivFrom (n : ℕ) : ℕ → ℕ → Bool
   | _, 0 => false
-  | d, f + 1 => Nat.blt n (d * d) || (n % d != 0 && noDivFrom n (d + 1) f)
+  | d, f + 1 => Nat.blt n (d * d) || (n % d != 0 && noDivFrom n (d + 2) f)
 
 theorem noDivFrom_spec {n : ℕ} : ∀ {f d : ℕ}, noDivFrom n d f = true →
-    ∀ m, d ≤ m → m * m ≤ n → ¬ m ∣ n
-  | 0, d, h, _, _, _ => by simp [noDivFrom] at h
-  | f + 1, d, h, m, hdm, hmn => by
+    ∀ m, d ≤ m → m % 2 = d % 2 → m * m ≤ n → ¬ m ∣ n
+  | 0, d, h, _, _, _, _ => by simp [noDivFrom] at h
+  | f + 1, d, h, m, hdm, hpar, hmn => by
     simp only [noDivFrom, Bool.or_eq_true, Bool.and_eq_true, Nat.blt_eq, bne_iff_ne] at h
     rcases h with h | ⟨h1, h2⟩
     · have : d * d ≤ m * m := Nat.mul_le_mul hdm hdm
       omega
     · rcases Nat.eq_or_lt_of_le hdm with rfl | hlt
       · exact fun hdvd => h1 (Nat.mod_eq_zero_of_dvd hdvd)
-      · exact noDivFrom_spec h2 m hlt hmn
+      · exact noDivFrom_spec h2 m (by omega) (by omega) hmn
 
-/-- Trial-division primality test (sound; see `isPrimeB_spec`). -/
+/-- Trial-division primality test by odd divisors (sound; see `isPrimeB_spec`). -/
 def isPrimeB (n : ℕ) : Bool :=
-  Nat.ble 2 n && noDivFrom n 2 n
+  Nat.beq n 2 || (Nat.ble 3 n && (n % 2 != 0 && noDivFrom n 3 n))
 
 theorem isPrimeB_spec {n : ℕ} (h : isPrimeB n = true) : n.Prime := by
-  simp only [isPrimeB, Bool.and_eq_true, Nat.ble_eq] at h
-  exact Nat.prime_def_le_sqrt.2 ⟨h.1, fun m hm2 hms =>
-    noDivFrom_spec h.2 m hm2 (Nat.le_sqrt.1 hms)⟩
+  simp only [isPrimeB, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.beq_eq_true_eq,
+    bne_iff_ne] at h
+  rcases h with rfl | ⟨h3, hodd, hnd⟩
+  · exact Nat.prime_two
+  · refine Nat.prime_def_le_sqrt.2 ⟨by omega, fun m hm2 hms hdvd => ?_⟩
+    have hmm : m * m ≤ n := Nat.le_sqrt.1 hms
+    rcases Nat.mod_two_eq_zero_or_one m with hm | hm
+    · exact hodd (Nat.mod_eq_zero_of_dvd ((Nat.dvd_of_mod_eq_zero hm).trans hdvd))
+    · exact noDivFrom_spec hnd m (by omega) (by omega) hmm hdvd
 
 /-- `findPair N p f = true` implies that some `p' ≥ p` has `p'` and `N - p'` both prime
 (`f` is fuel). -/
@@ -548,7 +554,7 @@ theorem checkFrom_spec : ∀ {M a : ℕ}, checkFrom a M = true →
 /-- The bound up to which Goldbach's conjecture is verified in this file. -/
 def goldbachBound : ℕ := 1000
 
-theorem check_goldbachBound : checkFrom 4 9999 = true := by decide +kernel
+theorem check_goldbachBound : checkFrom 4 4999 = true := by decide +kernel
 
 /-- **Numerical evidence** (not progress on the general statement): Goldbach's conjecture holds
 for every even `N` with `2 < N ≤ goldbachBound`. -/
