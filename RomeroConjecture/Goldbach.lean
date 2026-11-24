@@ -485,81 +485,70 @@ theorem goldbach_iff_primeCentered : GoldbachConjecture ↔ PrimeCentered := by
 This is **numerical evidence only** (and a tiny fraction of the `4·10¹⁸` range verified by
 Oliveira e Silva, Herzog and Pardi); it is no progress towards the general statement. -/
 
-/-- `noDiv n k = true` iff no `d ∈ [2, k + 1]` with `d * d ≤ n` divides `n`. -/
-def noDiv (n : ℕ) : ℕ → Bool
-  | 0 => true
-  | k + 1 => noDiv n k && (n < (k + 2) * (k + 2) || n % (k + 2) != 0)
+/-- `noDivFrom n d f = true` implies that no `m ≥ d` with `m * m ≤ n` divides `n`
+(`f` is fuel; running out of fuel returns `false`). -/
+def noDivFrom (n : ℕ) : ℕ → ℕ → Bool
+  | _, 0 => false
+  | d, f + 1 => Nat.blt n (d * d) || (n % d != 0 && noDivFrom n (d + 1) f)
 
-theorem noDiv_spec {n : ℕ} : ∀ {k : ℕ}, noDiv n k = true →
-    ∀ d, 2 ≤ d → d ≤ k + 1 → d * d ≤ n → ¬ d ∣ n
-  | 0, _, d, h2, hd, _ => by omega
-  | k + 1, h, d, h2, hd, hdn => by
-    simp only [noDiv, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne] at h
-    rcases Nat.lt_or_ge d (k + 2) with hlt | hge
-    · exact noDiv_spec h.1 d h2 (by omega) hdn
-    · have hd' : d = k + 2 := by omega
-      subst hd'
-      rcases h.2 with h' | h'
-      · omega
-      · exact fun hdvd => h' (Nat.mod_eq_zero_of_dvd hdvd)
-
-/-- Trial-division primality test with divisor bound `K + 1`; only claims primality when
-`n < (K + 2)²`. -/
-def isPrimeB (K n : ℕ) : Bool :=
-  decide (2 ≤ n) && decide (n < (K + 2) * (K + 2)) && noDiv n K
-
-theorem isPrimeB_spec {K n : ℕ} (h : isPrimeB K n = true) : n.Prime := by
-  simp only [isPrimeB, Bool.and_eq_true, decide_eq_true_eq] at h
-  obtain ⟨⟨h2, hK⟩, hnd⟩ := h
-  refine Nat.prime_def_le_sqrt.2 ⟨h2, fun m hm2 hms => ?_⟩
-  have hmm : m * m ≤ n := Nat.le_sqrt.1 hms
-  refine noDiv_spec hnd m hm2 ?_ hmm
-  by_contra hlt
-  have : (K + 2) * (K + 2) ≤ m * m := Nat.mul_le_mul (by omega) (by omega)
-  omega
-
-/-- `findPair K N j = true` iff some `p ∈ [1, j]` has `p` and `N - p` passing the primality
-test. -/
-def findPair (K N : ℕ) : ℕ → Bool
-  | 0 => false
-  | j + 1 => findPair K N j || (isPrimeB K (j + 1) && isPrimeB K (N - (j + 1)))
-
-theorem findPair_spec {K N : ℕ} : ∀ {j : ℕ}, findPair K N j = true →
-    ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = N
-  | 0, h => by simp [findPair] at h
-  | j + 1, h => by
-    simp only [findPair, Bool.or_eq_true, Bool.and_eq_true] at h
+theorem noDivFrom_spec {n : ℕ} : ∀ {f d : ℕ}, noDivFrom n d f = true →
+    ∀ m, d ≤ m → m * m ≤ n → ¬ m ∣ n
+  | 0, d, h, _, _, _ => by simp [noDivFrom] at h
+  | f + 1, d, h, m, hdm, hmn => by
+    simp only [noDivFrom, Bool.or_eq_true, Bool.and_eq_true, Nat.blt_eq, bne_iff_ne] at h
     rcases h with h | ⟨h1, h2⟩
-    · exact findPair_spec h
+    · have : d * d ≤ m * m := Nat.mul_le_mul hdm hdm
+      omega
+    · rcases Nat.eq_or_lt_of_le hdm with rfl | hlt
+      · exact fun hdvd => h1 (Nat.mod_eq_zero_of_dvd hdvd)
+      · exact noDivFrom_spec h2 m hlt hmn
+
+/-- Trial-division primality test (sound; see `isPrimeB_spec`). -/
+def isPrimeB (n : ℕ) : Bool :=
+  Nat.ble 2 n && noDivFrom n 2 n
+
+theorem isPrimeB_spec {n : ℕ} (h : isPrimeB n = true) : n.Prime := by
+  simp only [isPrimeB, Bool.and_eq_true, Nat.ble_eq] at h
+  exact Nat.prime_def_le_sqrt.2 ⟨h.1, fun m hm2 hms =>
+    noDivFrom_spec h.2 m hm2 (Nat.le_sqrt.1 hms)⟩
+
+/-- `findPair N p f = true` implies that some `p' ≥ p` has `p'` and `N - p'` both prime
+(`f` is fuel). -/
+def findPair (N : ℕ) : ℕ → ℕ → Bool
+  | _, 0 => false
+  | p, f + 1 => (isPrimeB p && isPrimeB (N - p)) || findPair N (p + 1) f
+
+theorem findPair_spec {N : ℕ} : ∀ {f p : ℕ}, findPair N p f = true →
+    ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = N
+  | 0, p, h => by simp [findPair] at h
+  | f + 1, p, h => by
+    simp only [findPair, Bool.or_eq_true, Bool.and_eq_true] at h
+    rcases h with ⟨h1, h2⟩ | h
     · have hq := isPrimeB_spec h2
       have := hq.pos
-      exact ⟨j + 1, N - (j + 1), isPrimeB_spec h1, hq, by omega⟩
+      exact ⟨p, N - p, isPrimeB_spec h1, hq, by omega⟩
+    · exact findPair_spec h
 
-/-- `checkFrom K J a M = true` iff `findPair` succeeds for the `M` even numbers
-`a, a + 2, …, a + 2 (M - 1)`. -/
-def checkFrom (K J a : ℕ) : ℕ → Bool
-  | 0 => true
-  | m + 1 => checkFrom K J a m && findPair K (a + 2 * m) J
+/-- `checkFrom a M = true` implies that the `M` even numbers `a, a + 2, …, a + 2 (M - 1)`
+are sums of two primes. -/
+def checkFrom : ℕ → ℕ → Bool
+  | _, 0 => true
+  | a, m + 1 => findPair a 2 a && checkFrom (a + 2) m
 
-theorem checkFrom_spec {K J a : ℕ} : ∀ {M : ℕ}, checkFrom K J a M = true →
+theorem checkFrom_spec : ∀ {M a : ℕ}, checkFrom a M = true →
     ∀ i, i < M → ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = a + 2 * i
-  | 0, _, i, hi => by omega
-  | m + 1, h, i, hi => by
+  | 0, _, _, i, hi => by omega
+  | m + 1, a, h, i, hi => by
     simp only [checkFrom, Bool.and_eq_true] at h
-    rcases Nat.lt_or_ge i m with hlt | hge
-    · exact checkFrom_spec h.1 i hlt
-    · have : i = m := by omega
-      subst this
-      exact findPair_spec h.2
-
-end Goldbach
-
-namespace Goldbach
+    rcases Nat.eq_zero_or_pos i with rfl | hpos
+    · exact findPair_spec h.1
+    · obtain ⟨p, q, hp, hq, hpq⟩ := checkFrom_spec h.2 (i - 1) (by omega)
+      exact ⟨p, q, hp, hq, by omega⟩
 
 /-- The bound up to which Goldbach's conjecture is verified in this file. -/
 def goldbachBound : ℕ := 1000
 
-theorem check_goldbachBound : checkFrom 30 500 4 499 = true := by decide +kernel
+theorem check_goldbachBound : checkFrom 4 9999 = true := by decide +kernel
 
 /-- **Numerical evidence** (not progress on the general statement): Goldbach's conjecture holds
 for every even `N` with `2 < N ≤ goldbachBound`. -/
