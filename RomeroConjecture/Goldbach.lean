@@ -485,84 +485,89 @@ theorem goldbach_iff_primeCentered : GoldbachConjecture ↔ PrimeCentered := by
 This is **numerical evidence only** (and a tiny fraction of the `4·10¹⁸` range verified by
 Oliveira e Silva, Herzog and Pardi); it is no progress towards the general statement. -/
 
-/-- `noDivFrom n d f = true` implies that no `m ≥ d` of the same parity as `d` with
-`m * m ≤ n` divides `n` (`f` is fuel; running out of fuel returns `false`). -/
-def noDivFrom (n : ℕ) : ℕ → ℕ → Bool
-  | _, 0 => false
-  | d, f + 1 => Nat.blt n (d * d) || (n % d != 0 && noDivFrom n (d + 2) f)
+/-- Trial division by the odd numbers `d = 3, 5, 7, …` in increasing order, stopping as soon as
+`d * d > n`.  The current divisor is `d = 2 * (F - f) + 1`, where `F` is the initial fuel and
+`f + 1` the remaining fuel (this keeps all arguments closed numerals during kernel evaluation).
+Running out of fuel returns `false`. -/
+def noDivFrom (n F : ℕ) : ℕ → Bool
+  | 0 => false
+  | f + 1 =>
+    Nat.blt n ((2 * (F - f) + 1) * (2 * (F - f) + 1)) ||
+      (n % (2 * (F - f) + 1) != 0 && noDivFrom n F f)
 
-theorem noDivFrom_spec {n : ℕ} : ∀ {f d : ℕ}, noDivFrom n d f = true →
-    ∀ m, d ≤ m → m % 2 = d % 2 → m * m ≤ n → ¬ m ∣ n
-  | 0, d, h, _, _, _, _ => by simp [noDivFrom] at h
-  | f + 1, d, h, m, hdm, hpar, hmn => by
+theorem noDivFrom_spec {n F : ℕ} : ∀ {f : ℕ}, f ≤ F → noDivFrom n F f = true →
+    ∀ m, 2 * (F - f) + 3 ≤ m → m % 2 = 1 → m * m ≤ n → ¬ m ∣ n
+  | 0, _, h, _, _, _, _ => by simp [noDivFrom] at h
+  | f + 1, hf, h, m, hdm, hpar, hmn => by
     simp only [noDivFrom, Bool.or_eq_true, Bool.and_eq_true, Nat.blt_eq, bne_iff_ne] at h
+    have hd : 2 * (F - (f + 1)) + 3 = 2 * (F - f) + 1 := by omega
+    rw [hd] at hdm
     rcases h with h | ⟨h1, h2⟩
-    · have : d * d ≤ m * m := Nat.mul_le_mul hdm hdm
+    · have : (2 * (F - f) + 1) * (2 * (F - f) + 1) ≤ m * m := Nat.mul_le_mul hdm hdm
       omega
     · rcases Nat.eq_or_lt_of_le hdm with rfl | hlt
       · exact fun hdvd => h1 (Nat.mod_eq_zero_of_dvd hdvd)
-      · exact noDivFrom_spec h2 m (by omega) (by omega) hmn
+      · exact noDivFrom_spec (by omega) h2 m (by omega) hpar hmn
 
 /-- Trial-division primality test by odd divisors (sound; see `isPrimeB_spec`). -/
 def isPrimeB (n : ℕ) : Bool :=
-  Nat.beq n 2 || (Nat.ble 3 n && (n % 2 != 0 && noDivFrom n 3 n))
+  Nat.beq n 2 || (Nat.ble 3 n && (n % 2 != 0 && noDivFrom n n n))
 
 theorem isPrimeB_spec {n : ℕ} (h : isPrimeB n = true) : n.Prime := by
-  simp only [isPrimeB, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.beq_eq_true_eq,
-    bne_iff_ne] at h
-  rcases h with rfl | ⟨h3, hodd, hnd⟩
-  · exact Nat.prime_two
+  simp only [isPrimeB, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, bne_iff_ne] at h
+  rcases h with h | ⟨h3, hodd, hnd⟩
+  · rw [Nat.eq_of_beq_eq_true h]
+    exact Nat.prime_two
   · refine Nat.prime_def_le_sqrt.2 ⟨by omega, fun m hm2 hms hdvd => ?_⟩
     have hmm : m * m ≤ n := Nat.le_sqrt.1 hms
     rcases Nat.mod_two_eq_zero_or_one m with hm | hm
     · exact hodd (Nat.mod_eq_zero_of_dvd ((Nat.dvd_of_mod_eq_zero hm).trans hdvd))
-    · exact noDivFrom_spec hnd m (by omega) (by omega) hmm hdvd
+    · exact noDivFrom_spec le_rfl hnd m (by omega) hm hmm hdvd
 
-/-- `findPair N p f = true` implies that some `p' ≥ p` has `p'` and `N - p'` both prime
-(`f` is fuel). -/
-def findPair (N : ℕ) : ℕ → ℕ → Bool
-  | _, 0 => false
-  | p, f + 1 => (isPrimeB p && isPrimeB (N - p)) || findPair N (p + 1) f
+/-- `findPair N f` tests the pairs `(N - j, j)` for `j = f, f - 1, …, 1` (so the first summand
+increases) and returns `true` only if one of them consists of two primes. -/
+def findPair (N : ℕ) : ℕ → Bool
+  | 0 => false
+  | f + 1 => (isPrimeB (N - (f + 1)) && isPrimeB (f + 1)) || findPair N f
 
-theorem findPair_spec {N : ℕ} : ∀ {f p : ℕ}, findPair N p f = true →
+theorem findPair_spec {N : ℕ} : ∀ {f : ℕ}, findPair N f = true →
     ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = N
-  | 0, p, h => by simp [findPair] at h
-  | f + 1, p, h => by
+  | 0, h => by simp [findPair] at h
+  | f + 1, h => by
     simp only [findPair, Bool.or_eq_true, Bool.and_eq_true] at h
     rcases h with ⟨h1, h2⟩ | h
-    · have hq := isPrimeB_spec h2
-      have := hq.pos
-      exact ⟨p, N - p, isPrimeB_spec h1, hq, by omega⟩
+    · have hp := isPrimeB_spec h1
+      have := hp.pos
+      exact ⟨N - (f + 1), f + 1, hp, isPrimeB_spec h2, by omega⟩
     · exact findPair_spec h
 
-/-- `checkFrom a M = true` implies that the `M` even numbers `a, a + 2, …, a + 2 (M - 1)`
-are sums of two primes. -/
-def checkFrom : ℕ → ℕ → Bool
-  | _, 0 => true
-  | a, m + 1 => findPair a 2 a && checkFrom (a + 2) m
+/-- `checkUpTo M = true` implies that each of the `M` even numbers `4, 6, …, 2 M + 2` is a sum
+of two primes. -/
+def checkUpTo : ℕ → Bool
+  | 0 => true
+  | m + 1 => findPair (2 * m + 4) (2 * m + 2) && checkUpTo m
 
-theorem checkFrom_spec : ∀ {M a : ℕ}, checkFrom a M = true →
-    ∀ i, i < M → ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = a + 2 * i
-  | 0, _, _, i, hi => by omega
-  | m + 1, a, h, i, hi => by
-    simp only [checkFrom, Bool.and_eq_true] at h
-    rcases Nat.eq_zero_or_pos i with rfl | hpos
+theorem checkUpTo_spec : ∀ {M : ℕ}, checkUpTo M = true →
+    ∀ i, i < M → ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = 2 * i + 4
+  | 0, _, i, hi => by omega
+  | m + 1, h, i, hi => by
+    simp only [checkUpTo, Bool.and_eq_true] at h
+    rcases Nat.eq_or_lt_of_le (Nat.lt_succ_iff.1 hi) with rfl | hlt
     · exact findPair_spec h.1
-    · obtain ⟨p, q, hp, hq, hpq⟩ := checkFrom_spec h.2 (i - 1) (by omega)
-      exact ⟨p, q, hp, hq, by omega⟩
+    · exact checkUpTo_spec h.2 i hlt
 
 /-- The bound up to which Goldbach's conjecture is verified in this file. -/
-def goldbachBound : ℕ := 1000
+def goldbachBound : ℕ := 10000
 
-theorem check_goldbachBound : checkFrom 4 4999 = true := by decide +kernel
+theorem checkUpTo_goldbachBound : checkUpTo 4999 = true := by decide +kernel
 
 /-- **Numerical evidence** (not progress on the general statement): Goldbach's conjecture holds
 for every even `N` with `2 < N ≤ goldbachBound`. -/
 theorem goldbach_upTo_bound (N : ℕ) (h2 : 2 < N) (he : Even N) (hN : N ≤ goldbachBound) :
     ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p + q = N := by
   obtain ⟨k, rfl⟩ := he
-  have hN' : k + k ≤ 1000 := hN
-  have := checkFrom_spec check_goldbachBound (k - 2) (by omega)
-  rwa [show 4 + 2 * (k - 2) = k + k by omega] at this
+  have hN' : k + k ≤ 10000 := hN
+  have := checkUpTo_spec checkUpTo_goldbachBound (k - 2) (by omega)
+  rwa [show 2 * (k - 2) + 4 = k + k by omega] at this
 
 end Goldbach
