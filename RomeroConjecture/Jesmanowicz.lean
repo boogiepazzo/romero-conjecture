@@ -1,3 +1,54 @@
+/-
+# Jeśmanowicz' conjecture on Pythagorean triples
+
+STATUS: IN PROGRESS / NOT YET SOLVED
+
+## Statement
+
+**Conjecture (L. Jeśmanowicz, Wiadom. Mat. (2) 1 (1955/56), 196–202; usually dated 1956).**
+Let `(a, b, c)` be a primitive Pythagorean triple (`a, b, c` positive integers,
+`gcd(a, b) = 1`, `a² + b² = c²`) and let `n ≥ 1`. Then the only solution in positive
+integers `(x, y, z)` of
+
+    (a n)^x + (b n)^y = (c n)^z
+
+is `x = y = z = 2`.
+
+The conjecture is OPEN in general. This file does NOT prove it. It states it
+faithfully (`JesmanowiczConjecture`) and proves some elementary partial results.
+(The form with a general `n` is the one used e.g. by Deng–Cohen 1998; many papers
+state only the primitive case `n = 1`, which it implies. We have not consulted the
+1955/56 Polish original to see which form it literally contains.)
+
+## What IS proved in this file (machine-checked, no `sorry`, no extra axioms)
+
+* `isSolution_two_two_two` : `(2, 2, 2)` is always a solution.
+* `isPrimitivePythagorean_swap`, `isSolution_swap`, `jesmanowiczFor_swap` :
+  symmetry under `a ↔ b` (with `x ↔ y`).
+* `IsPrimitivePythagorean.c_odd`, `.legs_parity`, `.four_dvd_of_even`,
+  `.two_le_left`, `.two_le_right` : parity / size facts for primitive triples.
+* `exponents_of_le`, `IsSolution.eq_two_of_le`, `IsSolution.z_lt_max`,
+  `IsSolution.eq_two_of_eq`, `IsSolution.two_le_z` : size constraints valid for
+  every primitive triple and every `n ≥ 1`: a solution with `x ≤ z` and `y ≤ z` is
+  `(2, 2, 2)`; hence any other solution has `z < max x y`; also `z ≥ 2` always.
+* `IsSolution.cancel`, `IsSolution.n_dvd_of_lt` : cancelling `n^z` when `z ≤ min x y`;
+  if `z < min x y` then `n ∣ c^z`.
+* `z_even_3_4_5`, `x_even_3_4_5`, `sierpinski_3_4_5`, `jesmanowiczFor_3_4_5_one`,
+  `jesmanowiczFor_4_3_5_one` : the triple `(3, 4, 5)` with `n = 1`
+  (Sierpiński, Wiadom. Mat. (2) 1 (1955/56), 194–195): `3^x + 4^y = 5^z ⇒ x = y = z = 2`.
+* `x_even_5_12_13`, `twentyfive_pow_add_twelve_ne`, `jesmanowicz_5_12_13`,
+  `jesmanowiczFor_5_12_13_one` : the triple `(5, 12, 13)` with `n = 1`
+  (one of the cases settled by Jeśmanowicz himself): `5^x + 12^y = 13^z ⇒ x = y = z = 2`.
+
+## What is NOT proved in this file
+
+* `JesmanowiczConjecture` itself (it is only a `def … : Prop`).
+* Any case with `n > 1` (not even `(3, 4, 5)`); only the general structural
+  constraints listed above are proved for `n > 1`.
+* Any primitive triple other than `(3, 4, 5)` and `(5, 12, 13)` (and the swap
+  `(4, 3, 5)`), in particular none of the infinite families of Lu (1959),
+  Dem'janenko (1965), Miyazaki, Terai, etc.
+-/
 import Mathlib
 
 namespace Jesmanowicz
@@ -503,6 +554,7 @@ theorem jesmanowicz_5_12_13 {x y z : ℕ} (hx : 0 < x) (hy : 0 < y) (hz : 0 < z)
   have hB4 := five_pow_mod_four u
   have hB3 := five_pow_mod_three u
   have h12pos : 0 < 12 ^ (y + 2) := by positivity
+  have h5pos : 0 < 5 ^ u := by positivity
   have hBA : 5 ^ u < 13 ^ w := by
     by_contra hle
     have : (13 ^ w) ^ 2 ≤ (5 ^ u) ^ 2 := Nat.pow_le_pow_left (by omega) 2
@@ -532,7 +584,7 @@ theorem jesmanowicz_5_12_13 {x y z : ℕ} (hx : 0 < x) (hy : 0 < y) (hz : 0 < z)
     obtain ⟨-, hs⟩ := eq_of_mul_eq_of_dvd (P := 2 ^ (2 * y + 2) * 3 ^ (y + 2))
       (Q := 1) (d := d) (s := 5 ^ u + d) (by positivity) (by norm_num)
       (by rw [mul_one]; exact hfac) hdvd (one_dvd _)
-    clear * - hs hdpos
+    clear * - hs hdpos h5pos
     omega
   · -- `d = 4^(y+1)`, `5^u + d = 3^(y+2)`: the genuine case
     obtain ⟨hd', hs⟩ := eq_of_mul_eq_of_dvd hPpos hQpos hfac h2 h3
@@ -557,7 +609,7 @@ theorem jesmanowicz_5_12_13 {x y z : ℕ} (hx : 0 < x) (hy : 0 < y) (hz : 0 < z)
       have := three_pow_lt_four_pow k
       rw [show k + 3 + 1 = k + 4 by ring] at hd'
       rw [show k + 3 + 2 = k + 5 by ring] at hs
-      clear * - hs hd' this
+      clear * - hs hd' this h5pos
       omega
   · -- `d = 3^(y+2)`, `5^u + d = 4^(y+1)`: impossible mod 4
     exfalso
@@ -579,5 +631,24 @@ theorem jesmanowiczFor_5_12_13_one : JesmanowiczFor 5 12 13 1 := by
   intro x y z hs
   obtain ⟨hx, hy, hz, h⟩ := isSolution_one.1 hs
   exact jesmanowicz_5_12_13 hx hy hz h
+
+/-! ### Axiom audit -/
+
+#print axioms isSolution_two_two_two
+#print axioms jesmanowiczFor_swap
+#print axioms IsPrimitivePythagorean.c_odd
+#print axioms IsPrimitivePythagorean.legs_parity
+#print axioms IsPrimitivePythagorean.four_dvd_of_even
+#print axioms IsSolution.eq_two_of_le
+#print axioms IsSolution.z_lt_max
+#print axioms IsSolution.eq_two_of_eq
+#print axioms IsSolution.two_le_z
+#print axioms IsSolution.cancel
+#print axioms IsSolution.n_dvd_of_lt
+#print axioms sierpinski_3_4_5
+#print axioms jesmanowiczFor_3_4_5_one
+#print axioms jesmanowiczFor_4_3_5_one
+#print axioms jesmanowicz_5_12_13
+#print axioms jesmanowiczFor_5_12_13_one
 
 end Jesmanowicz
