@@ -14,7 +14,7 @@ All proved statements are `sorry`-free and depend only on the standard axioms
 
 | # | Conjecture | File | Status |
 |---|------------|------|--------|
-| 1 | Jeśmanowicz' conjecture (1956) | `RomeroConjecture/Jesmanowicz.lean`, `RomeroConjecture/JesmanowiczAllN.lean` | IN PROGRESS / NOT YET SOLVED. Proved: triple (3,4,5) for all n; (5,12,13) for n = 1 (known results, re-formalized) |
+| 1 | Jeśmanowicz' conjecture (1956) | `RomeroConjecture/Jesmanowicz.lean`, `RomeroConjecture/JesmanowiczAllN.lean`, `RomeroConjecture/JesmanowiczFamilies.lean` | IN PROGRESS / NOT YET SOLVED. Proved: (3,4,5) and (5,12,13) for all n; Lu's family (4k²−1, 4k, 4k²+1) and (7,24,25) for n = 1; a general reduction for n > 1 (known results, re-formalized) |
 | 2 | Elliott–Halberstam conjecture (1968) | `RomeroConjecture/ElliottHalberstam.lean` | IN PROGRESS / NOT YET SOLVED |
 | 3 | Hot spots conjecture (Rauch, 1974) | `RomeroConjecture/HotSpots.lean` | IN PROGRESS / NOT YET SOLVED |
 | 4 | Goldbach's conjecture (1742), von Mangoldt-weighted form | `RomeroConjecture/Goldbach.lean` | IN PROGRESS / NOT YET SOLVED |
