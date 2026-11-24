@@ -1,1 +1,2 @@
 import RomeroConjecture.ElliottHalberstam
+import RomeroConjecture.HotSpots
