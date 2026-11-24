@@ -43,7 +43,8 @@ Formalized as `Legendre.LegendreConjecture`.
     `m = 155`, later `90`).
 * Numerical verification in the literature: Sorenson–Webster (*Res. Number Theory* 2025;
   arXiv:2401.13753, whose v1 title has `3.33·10¹³`) report verification for all
-  `n ≤ 7.05·10¹³`.  Tables of maximal prime gaps below `2⁶⁴` independently cover `n ≲ 4·10⁹`.
+  `n ≤ 7.05·10¹³` (per Chamberland–Straub, in the stronger Oppermann form).  Wikipedia quotes,
+  from tables of maximal prime gaps, the range `n² ≤ 2·10¹⁹`, i.e. `n ≈ 4.5·10⁹`.
 
 ## What is proved in this file (all machine-checked, no `sorry`, no extra axioms)
 
@@ -67,8 +68,9 @@ Formalized as `Legendre.LegendreConjecture`.
   (a Cramér-type bound `q - p ≤ C (log p)²` ⇒ Legendre for all `n ≥ max(2, 1024 C²)`),
   `LegendreConjecture.le_primeCounting` (Legendre ⇒ `π((n+1)²) ≥ n + 1`).
 * **Numerical evidence only**: `legendre_upTo_bound`, Legendre's statement for
-  `1 ≤ n ≤ legendreBound = 1000`, by `decide +kernel` on a verified trial-division checker
-  (no `native_decide`).  This is a negligible fraction of the published range.
+  `1 ≤ n ≤ legendreBound = 20000`, by `decide +kernel` on a verified checker (for each `n` a
+  number in `(n², (n+1)²)` coprime to `(n+1)!` is exhibited by kernel `Nat.gcd` computation, and
+  such a number is prime by `prime_of_gcd_factorial`; no `native_decide`).  This is a negligible fraction of the published range.
 
 ## What is NOT proved (stated only, as `def … : Prop`)
 
@@ -611,89 +613,81 @@ theorem primePowerCorrection_five_pos : 0 < primePowerCorrection 5 := by
 
 **Numerical evidence only**; no progress towards the general statement. -/
 
-/-- Trial division by the odd numbers `d = 3, 5, 7, …`, stopping as soon as `d * d > n`.  The
-current divisor is `d = 2 * (F - f) + 1`, where `F` is the initial fuel and `f + 1` the remaining
-fuel.  Running out of fuel returns `false`. -/
-def noDivFrom (n F : ℕ) : ℕ → Bool
+/-- Primality criterion behind the checker: if `2 ≤ p < (k+1)²` and `p` is coprime to `k!`, then
+`p` is prime (a composite `p` has a prime factor `≤ √p < k + 1`, which divides `k!`). -/
+theorem prime_of_gcd_factorial {p k : ℕ} (h2 : 2 ≤ p) (hlt : p < (k + 1) ^ 2)
+    (hg : Nat.gcd p k.factorial = 1) : p.Prime := by
+  by_contra hnp
+  have hq := Nat.minFac_prime (by omega : p ≠ 1)
+  have hsq : p.minFac ^ 2 ≤ p := Nat.minFac_sq_le_self (by omega) hnp
+  have hqk : p.minFac ≤ k := by
+    by_contra hc
+    have : (k + 1) ^ 2 ≤ p.minFac ^ 2 := Nat.pow_le_pow_left (by omega) 2
+    omega
+  have hd : p.minFac ∣ Nat.gcd p k.factorial :=
+    Nat.dvd_gcd (Nat.minFac_dvd p) (Nat.dvd_factorial hq.pos hqk)
+  rw [hg] at hd
+  exact hq.one_lt.ne' (Nat.dvd_one.1 hd)
+
+/-- `findCoprime lo P f` tests `lo + f, lo + f - 1, …, lo + 1` and returns `true` only if one of
+them is coprime to `P`. -/
+def findCoprime (lo P : ℕ) : ℕ → Bool
   | 0 => false
-  | f + 1 =>
-    Nat.blt n ((2 * (F - f) + 1) * (2 * (F - f) + 1)) ||
-      (n % (2 * (F - f) + 1) != 0 && noDivFrom n F f)
+  | f + 1 => Nat.beq (Nat.gcd (lo + (f + 1)) P) 1 || findCoprime lo P f
 
-theorem noDivFrom_spec {n F : ℕ} : ∀ {f : ℕ}, f ≤ F → noDivFrom n F f = true →
-    ∀ m, 2 * (F - f) + 3 ≤ m → m % 2 = 1 → m * m ≤ n → ¬ m ∣ n
-  | 0, _, h, _, _, _, _ => by simp [noDivFrom] at h
-  | f + 1, hf, h, m, hdm, hpar, hmn => by
-    simp only [noDivFrom, Bool.or_eq_true, Bool.and_eq_true, Nat.blt_eq, bne_iff_ne] at h
-    have hd : 2 * (F - (f + 1)) + 3 = 2 * (F - f) + 1 := by omega
-    rw [hd] at hdm
-    rcases h with h | ⟨h1, h2⟩
-    · have : (2 * (F - f) + 1) * (2 * (F - f) + 1) ≤ m * m := Nat.mul_le_mul hdm hdm
-      omega
-    · rcases Nat.eq_or_lt_of_le hdm with rfl | hlt
-      · exact fun hdvd => h1 (Nat.mod_eq_zero_of_dvd hdvd)
-      · exact noDivFrom_spec (by omega) h2 m (by omega) hpar hmn
-
-/-- Trial-division primality test (sound; see `isPrimeB_spec`).  The fuel `f` must be large
-enough (`f * f ≥ n` certainly suffices); too little fuel only makes the test return `false`. -/
-def isPrimeB (n f : ℕ) : Bool :=
-  Nat.beq n 2 || (Nat.ble 3 n && (n % 2 != 0 && noDivFrom n f f))
-
-theorem isPrimeB_spec {n f : ℕ} (h : isPrimeB n f = true) : n.Prime := by
-  simp only [isPrimeB, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, bne_iff_ne] at h
-  rcases h with h | ⟨h3, hodd, hnd⟩
-  · rw [Nat.eq_of_beq_eq_true h]
-    exact Nat.prime_two
-  · refine Nat.prime_def_le_sqrt.2 ⟨by omega, fun m hm2 hms hdvd => ?_⟩
-    have hmm : m * m ≤ n := Nat.le_sqrt.1 hms
-    rcases Nat.mod_two_eq_zero_or_one m with hm | hm
-    · exact hodd (Nat.mod_eq_zero_of_dvd ((Nat.dvd_of_mod_eq_zero hm).trans hdvd))
-    · exact noDivFrom_spec le_rfl hnd m (by omega) hm hmm hdvd
-
-/-- `findPrimeIn lo F f` tests `lo + f, lo + f - 1, …, lo + 1` for primality (with trial-division
-fuel `F`) and returns `true` only if one of them is prime. -/
-def findPrimeIn (lo F : ℕ) : ℕ → Bool
-  | 0 => false
-  | f + 1 => isPrimeB (lo + (f + 1)) F || findPrimeIn lo F f
-
-theorem findPrimeIn_spec {lo F : ℕ} : ∀ {f : ℕ}, findPrimeIn lo F f = true →
-    ∃ p : ℕ, p.Prime ∧ lo < p ∧ p ≤ lo + f
-  | 0, h => by simp [findPrimeIn] at h
+theorem findCoprime_spec {lo P : ℕ} : ∀ {f : ℕ}, findCoprime lo P f = true →
+    ∃ c : ℕ, lo < c ∧ c ≤ lo + f ∧ Nat.gcd c P = 1
+  | 0, h => by simp [findCoprime] at h
   | f + 1, h => by
-    simp only [findPrimeIn, Bool.or_eq_true] at h
+    simp only [findCoprime, Bool.or_eq_true] at h
     rcases h with h | h
-    · exact ⟨lo + (f + 1), isPrimeB_spec h, by omega, le_rfl⟩
-    · obtain ⟨p, hp, h1, h2⟩ := findPrimeIn_spec h
-      exact ⟨p, hp, h1, by omega⟩
+    · exact ⟨lo + (f + 1), by omega, le_rfl, Nat.eq_of_beq_eq_true h⟩
+    · obtain ⟨c, h1, h2, h3⟩ := findCoprime_spec h
+      exact ⟨c, h1, by omega, h3⟩
 
-/-- `checkUpTo M = true` implies Legendre's statement for every `1 ≤ n ≤ M`: for `n = m + 1` it
-searches `n² + 1, …, n² + 2n - 1` for a prime. -/
-def checkUpTo : ℕ → Bool
+/-- `checkFrom B P f` with remaining fuel `f` handles `n = B + 1 - f, …, B`; the accumulator is
+`P = (n + 1)!` for the current `n`.  For each `n` it searches `n² + 1, …, n² + 2n` for a number
+coprime to `(n + 1)!`, which is then prime by `prime_of_gcd_factorial`.  (The kernel evaluates
+`Nat.gcd`, `*`, `+`, `-` on numerals with arbitrary-precision arithmetic.) -/
+def checkFrom (B P : ℕ) : ℕ → Bool
   | 0 => true
-  | m + 1 => findPrimeIn ((m + 1) * (m + 1)) (m + 2) (2 * m + 1) && checkUpTo m
+  | f + 1 =>
+    findCoprime ((B - f) * (B - f)) P (2 * (B - f)) && checkFrom B (P * (B - f + 2)) f
 
-theorem checkUpTo_spec : ∀ {M : ℕ}, checkUpTo M = true →
-    ∀ n, 1 ≤ n → n ≤ M → ∃ p : ℕ, p.Prime ∧ n ^ 2 < p ∧ p < (n + 1) ^ 2
-  | 0, _, n, h1, h2 => by omega
-  | m + 1, h, n, h1, h2 => by
-    simp only [checkUpTo, Bool.and_eq_true] at h
-    rcases Nat.eq_or_lt_of_le h2 with rfl | hlt
-    · obtain ⟨p, hp, hp1, hp2⟩ := findPrimeIn_spec h.1
-      have e1 : (m + 1) ^ 2 = (m + 1) * (m + 1) := by ring
-      have e2 : (m + 1 + 1) ^ 2 = (m + 1) * (m + 1) + 2 * m + 3 := by ring
-      exact ⟨p, hp, by omega, by omega⟩
-    · exact checkUpTo_spec h.2 n h1 (by omega)
+theorem checkFrom_spec {B : ℕ} : ∀ {f P : ℕ}, f ≤ B → P = (B + 2 - f).factorial →
+    checkFrom B P f = true →
+    ∀ n, B + 1 - f ≤ n → n ≤ B → ∃ p : ℕ, p.Prime ∧ n ^ 2 < p ∧ p < (n + 1) ^ 2
+  | 0, _, _, _, _, n, h1, h2 => by omega
+  | f + 1, P, hf, hP, h, n, h1, h2 => by
+    simp only [checkFrom, Bool.and_eq_true] at h
+    rcases Nat.eq_or_lt_of_le h1 with e | hlt
+    · obtain ⟨c, hc1, hc2, hc3⟩ := findCoprime_spec h.1
+      have en : B - f = n := by omega
+      rw [en] at hc1 hc2
+      have eP : P = (n + 1).factorial := by rw [hP]; congr 1; omega
+      rw [eP] at hc3
+      have hn1 : 1 ≤ n := by omega
+      have e1 : n ^ 2 = n * n := by ring
+      have e2 : (n + 1) ^ 2 = n * n + 2 * n + 1 := by ring
+      have e3 : (n + 1 + 1) ^ 2 = n * n + 4 * n + 4 := by ring
+      have hnn : 1 ≤ n * n := Nat.mul_pos hn1 hn1
+      exact ⟨c, prime_of_gcd_factorial (by omega) (by omega) hc3, by omega, by omega⟩
+    · refine checkFrom_spec (by omega) ?_ h.2 n (by omega) h2
+      have e : B + 2 - f = (B - f + 1) + 1 := by omega
+      have e' : B + 2 - (f + 1) = B - f + 1 := by omega
+      rw [hP, e, e', Nat.factorial_succ (B - f + 1)]
+      ring
 
 /-- The bound up to which Legendre's conjecture is verified in this file. -/
-def legendreBound : ℕ := 1000
+def legendreBound : ℕ := 20000
 
-theorem checkUpTo_legendreBound : checkUpTo 1000 = true := by decide +kernel
+theorem checkFrom_legendreBound : checkFrom 20000 2 20000 = true := by decide +kernel
 
 /-- **Numerical evidence** (not progress on the general statement): Legendre's conjecture holds
-for every `1 ≤ n ≤ legendreBound`. -/
+for every `1 ≤ n ≤ legendreBound = 20000`. -/
 theorem legendre_upTo_bound (n : ℕ) (h1 : 1 ≤ n) (hn : n ≤ legendreBound) :
     ∃ p : ℕ, p.Prime ∧ n ^ 2 < p ∧ p < (n + 1) ^ 2 :=
-  checkUpTo_spec checkUpTo_legendreBound n h1 hn
+  checkFrom_spec (B := 20000) le_rfl (by decide) checkFrom_legendreBound n (by omega) hn
 
 end Legendre
 
@@ -724,5 +718,6 @@ end Legendre
 #print axioms Legendre.primePowerCorrection_le
 #print axioms Legendre.exists_prime_of_psi_increment_gt
 #print axioms Legendre.primePowerCorrection_five_pos
-#print axioms Legendre.checkUpTo_legendreBound
+#print axioms Legendre.prime_of_gcd_factorial
+#print axioms Legendre.checkFrom_legendreBound
 #print axioms Legendre.legendre_upTo_bound
