@@ -1,0 +1,287 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{conjecture}{Conjecture}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\N}{\mathbb{N}}
+
+\title{Machine-checked cases of Je\'smanowicz' conjecture in Lean~4,\\
+with formal statements of six further open conjectures}
+\author{Dr.\ Moises Romero, Ph.D., SPIE CNG}
+\date{25 November 2026}
+
+\sloppy
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report a Lean~4 / mathlib formalization of Je\'smanowicz' conjecture on
+Pythagorean triples together with machine-checked proofs of several of its
+classical cases: the triples $(3,4,5)$ and $(5,12,13)$ for every multiplier
+$n \ge 1$; the infinite family $(4k^2-1,\,4k,\,4k^2+1)$ and the triple
+$(7,24,25)$ for $n=1$; part of the family with $c=b+1$; and a general
+restriction on the exponents when $n>1$. All of these are known theorems;
+the contribution is their formal verification, by elementary arguments, with no
+unproved assumptions. \textbf{The conjecture itself remains open and is not
+proved here.} The same repository contains formal statements, with partial
+results, of six further open conjectures; none of them is resolved either.
+\end{abstract}
+
+\section{Introduction}
+
+A triple $(a,b,c)$ of positive integers is a \emph{primitive Pythagorean
+triple} if $a^2+b^2=c^2$ and $\gcd(a,b)=1$.
+
+\begin{conjecture}[Je\'smanowicz, 1955/56]\label{conj}
+Let $(a,b,c)$ be a primitive Pythagorean triple and $n\ge 1$ an integer. If
+$x,y,z$ are positive integers with
+\begin{equation}\label{eq:main}
+(an)^x+(bn)^y=(cn)^z ,
+\end{equation}
+then $x=y=z=2$.
+\end{conjecture}
+
+The conjecture originates in a paper of Je\'smanowicz~\cite{Jes} that followed
+Sierpi\'nski's treatment of $3^x+4^y=5^z$~\cite{Sier}. Both appeared in a
+volume dated 1955/56, and the literature cites either year. We did not consult
+the Polish originals, so we cannot say whether the conjecture was first posed
+only for $n=1$ or for general $n$; sources differ on this point. For the state
+of the art see the surveys \cite{LSS,SDCT}. As far as a brief literature search
+in November 2026 could establish, the conjecture is open.
+
+This note describes a formalization in the Lean~4 proof assistant with the
+mathlib library. Every theorem stated in Section~\ref{sec:results} has been
+checked by the Lean kernel.
+
+\section{Formal statement}
+
+Working over the natural numbers, the formalization defines the following.
+\begin{itemize}
+\item \lean{IsPrimitivePythagorean}~$a\ b\ c$ means $0<a$, $0<b$, $0<c$,
+$\gcd(a,b)=1$ and $a^2+b^2=c^2$;
+\item \lean{IsSolution}~$a\ b\ c\ n\ x\ y\ z$ means $0<x$, $0<y$, $0<z$ and
+$(an)^x+(bn)^y=(cn)^z$;
+\item \lean{JesmanowiczFor}~$a\ b\ c\ n$ means that every $x,y,z$ with
+\lean{IsSolution}~$a\ b\ c\ n\ x\ y\ z$ satisfy $x=y=z=2$;
+\end{itemize}
+It states Conjecture~\ref{conj} as the proposition
+\lean{JesmanowiczConjecture}: for all $a,b,c,n$, if
+\lean{IsPrimitivePythagorean}~$a\ b\ c$ and $0<n$ then
+\lean{JesmanowiczFor}~$a\ b\ c\ n$.
+This proposition is only \emph{stated} in the repository. No proof of it is
+given or claimed.
+
+\section{Machine-checked results}\label{sec:results}
+
+Throughout, $x,y,z$ are positive integers. The name in typewriter type after
+each statement is the Lean theorem.
+
+\begin{theorem}[all multipliers, two triples]\label{thm:alln}
+For every $n\ge 1$:
+\begin{enumerate}
+\item $(3n)^x+(4n)^y=(5n)^z$ implies $x=y=z=2$ \\ \textup{(\lean{jesmanowiczFor\_3\_4\_5})};
+\item $(5n)^x+(12n)^y=(13n)^z$ implies $x=y=z=2$ \\ \textup{(\lean{jesmanowiczFor\_5\_12\_13})}.
+\end{enumerate}
+\end{theorem}
+
+\begin{theorem}[an infinite family, $n=1$]\label{thm:lu}
+For every $k\ge 1$,
+\[
+(4k^2-1)^x+(4k)^y=(4k^2+1)^z \quad\text{implies}\quad x=y=z=2
+\]
+\textup{(\lean{jesmanowiczFor\_lu})}. Moreover $7^x+24^y=25^z$ implies $x=y=z=2$
+\textup{(\lean{jesmanowicz\_7\_24\_25})}.
+\end{theorem}
+
+\begin{theorem}[exponent restriction for $n>1$]\label{thm:red}
+Let $(a,b,c)$ be a primitive Pythagorean triple and $n>1$. Every solution of
+\eqref{eq:main} satisfies $x=y=z=2$, or $x<z<y$, or $y<z<x$
+\\ \textup{(\lean{IsSolution.strict\_cases\_of\_one\_lt})}.
+\end{theorem}
+
+\begin{theorem}[the family $c=b+1$, $n=1$, partial]\label{thm:dem}
+Let $k\ge 1$ and $(a,b,c)=(2k+1,\ 2k(k+1),\ 2k(k+1)+1)$.
+\begin{enumerate}
+\item Every solution of $a^x+b^y=c^z$ with $y\ge 2$ has $x=y=z=2$
+\\ \textup{(\lean{demjanenko\_eq\_two\_of\_two\_le\_y})}.
+\item A solution with $y=1$ forces $x\equiv 0 \pmod 4$, $z\equiv 1\pmod 4$, and
+every prime factor of $2k+1$ to be $\equiv 1 \pmod 8$ \textup{(\lean{dem\_y\_one})}.
+\item Consequently \lean{JesmanowiczFor}~$a\ b\ c\ 1$ holds whenever $4\nmid k$
+\\ \textup{(\lean{jesmanowiczFor\_demjanenko\_of\_not\_four\_dvd})}.
+\end{enumerate}
+\end{theorem}
+
+\begin{remark}
+Theorem~\ref{thm:dem} does \emph{not} establish the whole family. The case
+$4\mid k$ with all prime factors of $2k+1$ congruent to $1$ modulo $8$ is
+reduced in the formalization to an explicitly unproved statement; the smallest
+triple not covered is $(17,144,145)$. In the literature the full family is
+attributed to Dem'janenko~\cite{Dem}, whose paper we were unable to obtain.
+\end{remark}
+
+\subsection*{Proof ideas}
+
+All arguments are elementary. A size comparison shows that a solution with
+$x\le z$ and $y\le z$ is $(2,2,2)$. For Theorem~\ref{thm:alln}(1) the remaining
+cases are split by the position of $z$. If $z<\min(x,y)$, cancelling $n^z$
+shows $n\mid 5^z$ and the case reduces to Sierpi\'nski's theorem. If
+$y\le z<x$ or $x\le z<y$, cancelling shows that $n$ is a power of $2$ or of
+$3$ and that the cofactor equals $1$, leaving divisibilities of the form
+$3^x\mid 5^z-c^z$ or $4^y\mid 5^z-c^z$ with small $c$; these contradict
+lifting-the-exponent bounds. For $(5,12,13)$ the multiplier need not be a prime
+power, and the proof instead classifies the cofactor $12^y/n^{z-y}$, which is
+coprime to $n$, as one of $1,3^y,4^y,12^y$. Theorem~\ref{thm:lu} uses the
+congruence $u^2 \mid (1+u)^m-1-mu$ with $u=4k^2$ to force $x$ and $z$ even and
+$y\ge 2$, followed by a difference-of-squares factorization in which one
+factor must equal~$2$. Theorem~\ref{thm:red} rests on the lemma
+$b^{x+1}\nmid c^x-a^x$ for primitive triples.
+
+\subsection*{Attribution}
+
+None of the results above is new. Theorem~\ref{thm:alln}(1) for $n=1$ is due to
+Sierpi\'nski~\cite{Sier}; the cases $(5,12,13)$ and $(7,24,25)$ for $n=1$ to
+Je\'smanowicz~\cite{Jes}; the family of Theorem~\ref{thm:lu} to Lu~\cite{Lu}.
+The all-$n$ statements of Theorem~\ref{thm:alln} are commonly attributed to Deng
+and Cohen~\cite{DC}; we did not verify this against the paper, and for
+$(5,12,13)$ the attribution should be treated as unconfirmed.
+Theorem~\ref{thm:red} is attributed in \cite{note} to Deng~\cite{Deng} and to
+Yang and Fu~\cite{YF}. Theorem~\ref{thm:dem}(3) is attributed in \cite{SDCT} to
+Podyspanin. Bibliographic data for \cite{Lu,Dem,Deng,YF} were taken from
+secondary sources.
+
+The formal proofs were written from scratch and were not transcribed from the
+original papers, so they may differ from the published arguments. One exception
+should be recorded: the argument for Theorem~\ref{thm:dem}(1) is not independent
+of Chapter~1 of Miyazaki's thesis~\cite{Miy}, which was consulted while it was
+being completed.
+
+\section{Verification}
+
+The development uses Lean~4 (version 4.36.0) and mathlib. The command
+\lean{lake build} succeeds on the whole library. The files contain no
+\lean{sorry}, no added axioms and no \lean{native\_decide}. Running
+\lean{\#print axioms} on each theorem cited above reports at most the three
+standard axioms \lean{propext}, \lean{Classical.choice} and \lean{Quot.sound}.
+
+\section{Other formal statements in the repository}
+
+The repository also contains formal statements of six further open conjectures,
+each with machine-checked partial results (Table~\ref{tab:other}). In every case
+the conjecture is only stated. The partial results are special cases,
+reformulations, or implications between open statements.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}>{\raggedright}p{0.30\textwidth}>{\raggedright\arraybackslash}p{0.64\textwidth}@{}}
+\toprule
+Conjecture & Machine-checked partial results \\
+\midrule
+Elliott--Halberstam (von Mangoldt form) &
+Trivial bounds; monotonicity in the level of distribution; reductions to
+natural exponents, large $x$, and levels tending to $1$. \\
+Hot spots (Rauch) &
+Zero mean and sign change of Neumann eigenfunctions; the interval in full. \\
+Goldbach (von Mangoldt-weighted) &
+Positivity criteria for the weighted counts; explicit bound on the prime-power
+contribution; equivalent forms; verification for even $N\le 10^4$. \\
+Legendre (Chebyshev $\theta$, $\psi$) &
+Reformulations; Oppermann $\Rightarrow$ Legendre; Andrica $\Rightarrow$
+Legendre; verification for $n\le 20000$. \\
+P\'olya's eigenvalue conjecture &
+The interval in full; lattice-point bound giving the inequality for the
+rectangle's explicit model spectrum. \\
+Hardy--Littlewood prime $k$-tuples (von Mangoldt form) &
+The singular series converges and is positive exactly for admissible tuples;
+the quantitative form implies the qualitative form, which implies the twin
+prime conjecture. \\
+\bottomrule
+\end{tabular}
+\caption{Further formal statements. None of these conjectures is resolved.}
+\label{tab:other}
+\end{table}
+
+\section{Limitations}
+
+\begin{itemize}
+\item \textbf{Nothing open is solved.} Every conjecture in the repository,
+including Conjecture~\ref{conj}, remains unproved.
+\item \textbf{Numerical checks are evidence only.} The Goldbach and Legendre
+verifications cover ranges far below those in the published literature.
+\item \textbf{Statement fidelity.} Mathlib has no Sobolev spaces. The hot spots
+and P\'olya statements therefore use weak or classical eigenfunction
+definitions whose agreement with the standard ones is argued informally, and
+the rectangle case of P\'olya's inequality is proved only for the explicit
+model spectrum, without a completeness theorem.
+\item \textbf{Literature checks were brief.} Open status and attributions rest
+on a small number of searches and largely on secondary sources. In particular,
+unrefereed 2026 preprints claim substantial parts of the planar hot spots
+conjecture and of P\'olya's conjecture for simply connected planar domains; we
+did not verify them.
+\end{itemize}
+
+\section*{Availability}
+
+Source code, per-conjecture issue logs and literature notes:
+\url{https://github.com/boogiepazzo/romero-conjecture}.
+
+\section*{Acknowledgement}
+
+The Lean proofs and the literature notes were developed with the assistance of
+an AI coding agent (Claude Code, Anthropic). All formal statements cited here
+are checked by the Lean kernel; the informal attributions and literature
+remarks are not machine-checked and carry the uncertainties stated above.
+
+\begin{thebibliography}{99}
+
+\bibitem{Jes} L. Je\'smanowicz, Several remarks on Pythagorean numbers (Polish),
+\emph{Wiadom. Mat.} \textbf{1} (1955/56), 196--202.
+
+\bibitem{Sier} W. Sierpi\'nski, On the equation $3^x+4^y=5^z$ (Polish),
+\emph{Wiadom. Mat.} \textbf{1} (1955/56), 194--195.
+
+\bibitem{Lu} W. T. Lu, On the Pythagorean numbers $4n^2-1$, $4n$ and $4n^2+1$
+(Chinese), \emph{Acta Sci. Natur. Univ. Szechuan} \textbf{2} (1959), 39--42.
+
+\bibitem{Dem} V. A. Dem'janenko, On Je\'smanowicz' problem for Pythagorean
+numbers (Russian), \emph{Izv. Vys\v{s}. U\v{c}ebn. Zaved. Mat.} \textbf{48}
+(1965), 52--56.
+
+\bibitem{DC} M.-J. Deng and G. L. Cohen, On the conjecture of Je\'smanowicz
+concerning Pythagorean triples, \emph{Bull. Austral. Math. Soc.} \textbf{57}
+(1998), 515--524.
+
+\bibitem{Deng} M.-J. Deng, A note on the Diophantine equation
+$(na)^x+(nb)^y=(nc)^z$, \emph{Bull. Aust. Math. Soc.} \textbf{89} (2014),
+316--321.
+
+\bibitem{YF} H. Yang and R.-Q. Fu, A note on Je\'smanowicz' conjecture
+concerning primitive Pythagorean triples, \emph{J. Number Theory} \textbf{156}
+(2015), 183--194.
+
+\bibitem{Miy} T. Miyazaki, doctoral thesis, Tokyo Metropolitan University,
+\url{https://tokyo-metro-u.repo.nii.ac.jp/record/2119/files/10432-001.pdf}.
+
+\bibitem{LSS} M. Le, R. Scott and R. Styer, A survey on the ternary purely
+exponential Diophantine equation $a^x+b^y=c^z$, arXiv:1808.06557.
+
+\bibitem{SDCT} G. Soydan, M. Demirci, I. N. Cang\"ul and A. Togb\'e, On the
+conjecture of Je\'smanowicz, arXiv:1706.05480.
+
+\bibitem{note} A note on Je\'smanowicz' conjecture for non-primitive
+Pythagorean triples, arXiv:2102.10921.
+
+\end{thebibliography}
+
+\end{document}
