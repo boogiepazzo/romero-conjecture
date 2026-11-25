@@ -7,3 +7,4 @@ import RomeroConjecture.JesmanowiczFamilies
 import RomeroConjecture.Legendre
 import RomeroConjecture.Polya
 import RomeroConjecture.JesmanowiczDemjanenko
+import RomeroConjecture.PrimeTuples

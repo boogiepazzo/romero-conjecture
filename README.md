@@ -22,6 +22,7 @@ are known theorems re-formalized here; they are not new mathematics.
 | Goldbach's conjecture (1742), von Mangoldt-weighted form | `Goldbach.lean` | [#5](https://github.com/boogiepazzo/romero-conjecture/issues/5) | Positivity criteria for the weighted counts; explicit bound on the prime-power contribution; equivalent forms; verification to 10⁴ (evidence only) |
 | Legendre's conjecture, Chebyshev θ / ψ form | `Legendre.lean` | [#6](https://github.com/boogiepazzo/romero-conjecture/issues/6) | θ, ψ and prime-counting reformulations; Oppermann ⇒ Legendre; Andrica ⇒ Legendre; Legendre ⇒ gap ≤ 4√p + 1; verification for n ≤ 20000 (evidence only) |
 | Pólya's eigenvalue conjecture (1954/61), heat equation | `Polya.lean` | [#8](https://github.com/boogiepazzo/romero-conjecture/issues/8) | The interval case in full (classical formulation); lattice-point bound for the rectangle's model spectrum; product sines are eigenfunctions of the rectangle |
+| Hardy–Littlewood prime k-tuples conjecture (1923), von Mangoldt form | `PrimeTuples.lean` | [#9](https://github.com/boogiepazzo/romero-conjecture/issues/9) | Singular series converges and is positive exactly for admissible tuples; inadmissible tuples give finitely many prime tuples; quantitative form ⇒ qualitative form ⇒ twin primes (conditional implications between open statements) |
 
 All files live in `RomeroConjecture/`.
 
