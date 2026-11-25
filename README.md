@@ -77,3 +77,7 @@ To check a single file and see its `#print axioms` output:
 ```bash
 lake env lean RomeroConjecture/Jesmanowicz.lean
 ```
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
