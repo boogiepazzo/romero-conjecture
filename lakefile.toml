@@ -1,0 +1,10 @@
+name = "RomeroConjecture"
+defaultTargets = ["RomeroConjecture"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "stable"
+
+[[lean_lib]]
+name = "RomeroConjecture"
