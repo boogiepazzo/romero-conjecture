@@ -6,3 +6,4 @@ import RomeroConjecture.Goldbach
 import RomeroConjecture.JesmanowiczFamilies
 import RomeroConjecture.Legendre
 import RomeroConjecture.Polya
+import RomeroConjecture.JesmanowiczDemjanenko
