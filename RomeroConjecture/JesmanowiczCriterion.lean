@@ -128,6 +128,26 @@ the others as soon as primality certificates are supplied.
 
 ## Novelty assessment (read this before citing the result as new)
 
+REFEREE UPDATE (2026-11-26, after a dedicated adversarial literature check; supersedes the text
+below where they disagree).
+* The `n = 1` half of the criterion is KNOWN: T. Miyazaki, "On the conjecture of Jeśmanowicz
+  concerning Pythagorean triples", Bull. Aust. Math. Soc. 80 (2009) 413-422, Theorem 1.4 (if
+  m² − n² has no prime factor ≡ 1 mod 4, m − n has a prime factor ≡ 3 mod 8 and m ≢ 1 mod 4, the
+  primitive conjecture holds). Every pair of this file satisfies those hypotheses, and Miyazaki
+  does not need the prime-power assumptions. His Example 2.12 states the cases (33,56,65) and
+  (57,176,185) explicitly. His proof uses Darmon–Merel (via Cao–Dong); the proof here is
+  elementary, which is a difference of method only.
+* For `n > 1`, Le 1999 / Yang–Fu 2015 already settle every `n` whose radical divides neither `a`
+  nor `b`. The possibly new content of this file is therefore exactly: `n > 1` with
+  rad(n) ∣ a or rad(n) ∣ b, for this family.
+* That remaining `n > 1` statement, and the all-`n` statement for each instance with c > 101,
+  were NOT FOUND after two referee passes (surveys arXiv:1706.05480 and arXiv:1808.06557, about
+  100 OpenAlex and 159 zbMATH records, citing-paper lists, exact-equation searches in English and
+  Chinese). Papers on the mirror shape (f a power of 2: Feng–Luo 2022, Fan–Luo 2023, Guan 2021)
+  do not apply. Several paywalled or Chinese-language sources could not be read, so this is not
+  a certificate of novelty.
+
+
 Claim made here, and nothing stronger: **the general theorem and its instances other than
 those listed as known below were NOT FOUND in the literature that was searched (see the issue
 log of the project and the novelty paragraph of `JesmanowiczNew.lean`); a separate referee
