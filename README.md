@@ -16,7 +16,7 @@ are known theorems re-formalized here; they are not new mathematics.
 
 | Conjecture | Files | Issue | Machine-checked so far |
 |---|---|---|---|
-| Jeśmanowicz' conjecture (1955/56) | `Jesmanowicz.lean`, `JesmanowiczAllN.lean`, `JesmanowiczFamilies.lean`, `JesmanowiczDemjanenko.lean` | [#1](https://github.com/boogiepazzo/romero-conjecture/issues/1) | (3,4,5) and (5,12,13) for every n; Lu's family (4k²−1, 4k, 4k²+1) and (7,24,25) for n = 1; Dem'janenko's family (2k+1, 2k(k+1), 2k(k+1)+1) for n = 1 when 4 ∤ k (the case 4 ∣ k is only reduced to an unproved residual statement); for n > 1, a nontrivial solution has x < z < y or y < z < x |
+| Jeśmanowicz' conjecture (1955/56) | `Jesmanowicz.lean`, `JesmanowiczAllN.lean`, `JesmanowiczFamilies.lean`, `JesmanowiczDemjanenko.lean`, `JesmanowiczLuAllN.lean`, `JesmanowiczNew.lean`, `JesmanowiczCriterion.lean` | [#1](https://github.com/boogiepazzo/romero-conjecture/issues/1) | (3,4,5) and (5,12,13) for every n; Lu's family (4k²−1, 4k, 4k²+1) and (7,24,25) for n = 1; Dem'janenko's family (2k+1, 2k(k+1), 2k(k+1)+1) for n = 1 when 4 ∤ k (the case 4 ∣ k is only reduced to an unproved residual statement); for n > 1, a nontrivial solution has x < z < y or y < z < x. **General criterion (`jesmanowiczFor_of_criterion`):** if g = 2^r with r ≥ 2, and f − g, f, f + g are all prime powers with f − g ≡ 3 (mod 8), the conjecture holds for (f²−g², 2fg, f²+g²) and every n; 24 instances are proved, 22 of them outside the published list of settled triples. After a dedicated adversarial literature check: the n = 1 half is KNOWN (Miyazaki 2009, Thm 1.4); the n > 1 half (for n whose radical divides a or b) was not found in the literature, which is not a certificate of novelty. **Novelty status after an adversarial literature check (not certified):** (57, 176, 185) for every n was not found in the literature; (33, 56, 65) for every n is KNOWN (Guan 2021, via Deng 2026, Lemma 2.3: all primitive triples with c ≤ 101); (783, 56, 785) for every n was not found, but an unread 2026 paper on exactly this family (Deng–Huang, J. Math., DOI 10.1155/jom/3566998) may cover it; (11663, 216, 11665) is half known (the y < z < x case is Fujita–Le 2021); the y < z < x exclusion theorem for Lu's family is known for k ≥ 49 (Fujita–Le 2021). See issue #1 |
 | Elliott–Halberstam conjecture (1968/70), von Mangoldt form | `ElliottHalberstam.lean` | [#2](https://github.com/boogiepazzo/romero-conjecture/issues/2) | Trivial bounds; monotonicity in the level; reductions to natural exponents, large x, and levels tending to 1 |
 | Hot spots conjecture (Rauch, 1974), heat conduction | `HotSpots.lean` | [#3](https://github.com/boogiepazzo/romero-conjecture/issues/3) | Zero mean and sign change of Neumann eigenfunctions; the interval case in full |
 | Goldbach's conjecture (1742), von Mangoldt-weighted form | `Goldbach.lean` | [#5](https://github.com/boogiepazzo/romero-conjecture/issues/5) | Positivity criteria for the weighted counts; explicit bound on the prime-power contribution; equivalent forms; verification to 10⁴ (evidence only) |
@@ -77,3 +77,7 @@ To check a single file and see its `#print axioms` output:
 ```bash
 lake env lean RomeroConjecture/Jesmanowicz.lean
 ```
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
