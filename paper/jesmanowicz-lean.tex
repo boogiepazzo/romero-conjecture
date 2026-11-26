@@ -17,7 +17,7 @@
 \newcommand{\N}{\mathbb{N}}
 
 \title{Machine-checked cases of Je\'smanowicz' conjecture in Lean~4,\\
-with formal statements of six further open conjectures}
+including a criterion for multipliers $n>1$}
 \author{Dr.\ Moises Romero, Ph.D., SPIE CNG}
 \date{25 November 2026}
 
@@ -27,15 +27,18 @@ with formal statements of six further open conjectures}
 
 \begin{abstract}
 We report a Lean~4 / mathlib formalization of Je\'smanowicz' conjecture on
-Pythagorean triples together with machine-checked proofs of several of its
-classical cases: the triples $(3,4,5)$ and $(5,12,13)$ for every multiplier
-$n \ge 1$; the infinite family $(4k^2-1,\,4k,\,4k^2+1)$ and the triple
-$(7,24,25)$ for $n=1$; part of the family with $c=b+1$; and a general
-restriction on the exponents when $n>1$. All of these are known theorems;
-the contribution is their formal verification, by elementary arguments, with no
-unproved assumptions. \textbf{The conjecture itself remains open and is not
-proved here.} The same repository contains formal statements, with partial
-results, of six further open conjectures; none of them is resolved either.
+Pythagorean triples, with machine-checked proofs of a number of its cases.
+Most are classical: the triples $(3,4,5)$ and $(5,12,13)$ for every multiplier
+$n\ge 1$, the family $(4k^2-1,\,4k,\,4k^2+1)$ and the triple $(7,24,25)$ for
+$n=1$, part of the family with $c=b+1$, and a restriction on the exponents
+when $n>1$. In addition we prove a criterion: if $g=2^r$ with $r\ge 2$, the
+numbers $f-g$, $f$, $f+g$ are prime powers and $f-g\equiv 3 \pmod 8$, then the
+conjecture holds for $(f^2-g^2,\,2fg,\,f^2+g^2)$ and \emph{every} $n\ge 1$.
+For $n=1$ this is contained in a theorem of Miyazaki; for $n>1$ we did not find
+it in the literature, and we state precisely what was and was not checked.
+\textbf{The conjecture itself remains open and is not proved here.} The same
+repository contains formal statements, with partial results, of six further
+open conjectures; none of them is resolved either.
 \end{abstract}
 
 \section{Introduction}
@@ -61,8 +64,8 @@ of the art see the surveys \cite{LSS,SDCT}. As far as a brief literature search
 in November 2026 could establish, the conjecture is open.
 
 This note describes a formalization in the Lean~4 proof assistant with the
-mathlib library. Every theorem stated in Section~\ref{sec:results} has been
-checked by the Lean kernel.
+mathlib library. Every theorem stated in Sections~\ref{sec:results} and~\ref{sec:crit} has
+been checked by the Lean kernel.
 
 \section{Formal statement}
 
@@ -82,7 +85,7 @@ It states Conjecture~\ref{conj} as the proposition
 This proposition is only \emph{stated} in the repository. No proof of it is
 given or claimed.
 
-\section{Machine-checked results}\label{sec:results}
+\section{Machine-checked classical cases}\label{sec:results}
 
 Throughout, $x,y,z$ are positive integers. The name in typewriter type after
 each statement is the Lean theorem.
@@ -149,7 +152,7 @@ $b^{x+1}\nmid c^x-a^x$ for primitive triples.
 
 \subsection*{Attribution}
 
-None of the results above is new. Theorem~\ref{thm:alln}(1) for $n=1$ is due to
+None of the results of this section is new. Theorem~\ref{thm:alln}(1) for $n=1$ is due to
 Sierpi\'nski~\cite{Sier}; the cases $(5,12,13)$ and $(7,24,25)$ for $n=1$ to
 Je\'smanowicz~\cite{Jes}; the family of Theorem~\ref{thm:lu} to Lu~\cite{Lu}.
 The all-$n$ statements of Theorem~\ref{thm:alln} are commonly attributed to Deng
@@ -165,6 +168,97 @@ original papers, so they may differ from the published arguments. One exception
 should be recorded: the argument for Theorem~\ref{thm:dem}(1) is not independent
 of Chapter~1 of Miyazaki's thesis~\cite{Miy}, which was consulted while it was
 being completed.
+
+\section{A criterion for multipliers $n>1$}\label{sec:crit}
+
+Write a primitive Pythagorean triple as $(a,b,c)=(f^2-g^2,\,2fg,\,f^2+g^2)$
+with $f>g>0$ coprime of opposite parity.
+
+\begin{theorem}[\lean{jesmanowiczFor\_of\_criterion}]\label{thm:crit}
+Let $g=2^r$ with $r\ge 2$, and let $f>g$. Suppose that $f-g$, $f$ and $f+g$ are
+prime powers and that $f-g\equiv 3 \pmod 8$. Then for every $n\ge 1$ the
+equation
+\[
+\bigl((f^2-g^2)n\bigr)^x+\bigl(2fg\,n\bigr)^y=\bigl((f^2+g^2)n\bigr)^z
+\]
+has only the solution $x=y=z=2$ in positive integers.
+\end{theorem}
+
+Since $3\nmid g$, one of $f-g$, $f$, $f+g$ is a power of $3$. The first pairs
+$(f,g)$ satisfying the hypotheses are
+\[
+(7,4),\ (11,8),\ (19,8),\ (23,4),\ (27,16),\ (43,16),\ (67,64),\ (211,32),\
+(227,16),\ (243,64),
+\]
+giving the triples $(33,56,65)$, $(57,176,185)$, $(297,304,425)$,
+$(513,184,545)$, $(473,864,985)$, $(1593,1376,2105)$, $(393,8576,8585)$, and
+so on. The repository instantiates the theorem for $24$ pairs. A numerical
+search, which is not formalized, finds $12$ pairs with $f<10^4$ and $30$ with
+$f<10^{12}$; we do not know whether the family is infinite.
+
+\subsection*{What is known and what appears to be new}
+
+\begin{itemize}
+\item \textbf{The case $n=1$ is known.} Miyazaki~\cite[Theorem~1.4]{Miy09}
+proved the primitive conjecture whenever $f^2-g^2$ has no prime factor
+$\equiv 1 \pmod 4$, $f-g$ has a prime factor $\equiv 3 \pmod 8$ and
+$f\not\equiv 1 \pmod 4$. The hypotheses of Theorem~\ref{thm:crit} imply these,
+and Miyazaki needs no prime-power assumption; his Example~2.12 lists
+$(33,56,65)$ and $(57,176,185)$ explicitly. His proof uses a result resting on
+the theorem of Darmon and Merel, whereas the formal proof here is elementary;
+that is a difference of method, not of result.
+\item \textbf{For $n>1$, part is known.} By results of Le~\cite{Le99} and of
+Deng~\cite{Deng} and Yang--Fu~\cite{YF} (Theorem~\ref{thm:red} above is the
+exponent part), a solution other than $(2,2,2)$ can exist only if every prime
+factor of $n$ divides $a$, or every prime factor of $n$ divides $b$. Together
+with Miyazaki's theorem this settles all other $n$.
+\item \textbf{The triple $(33,56,65)$ is known for all $n$}: it is attributed
+to Guan~\cite{Guan} in \cite{Deng26}, which states the conjecture for every
+primitive triple with $c\le 101$ and all $n$. We could not obtain \cite{Guan}.
+\item \textbf{The remaining case was not found in the literature}: $n>1$ with
+all prime factors of $n$ dividing $a$, or all dividing $b$, for the family of
+Theorem~\ref{thm:crit}; in particular the complete statement for all $n$ for
+the instances with $c>101$, beginning with $(57,176,185)$.
+\end{itemize}
+
+\begin{remark}[Scope of the novelty check]
+``Not found'' means the following and no more. We read in full the surveys
+\cite{LSS,SDCT}, and the papers \cite{Miy09,FL,Deng26}; we examined, mostly
+through abstracts and reviews, the publications indexed under the conjecture's
+name in zbMATH and OpenAlex (roughly $160$ and $100$ records), the lists of
+papers citing the main references, and searches for the explicit equations in
+English and Chinese. Results on the mirror-image shape, in which $f$ rather
+than $g$ is a power of $2$, do not apply. Several paywalled papers and
+Chinese-language journals could not be read. We therefore make no claim of
+priority; we would be grateful to learn of any earlier source.
+\end{remark}
+
+\subsection*{Proof idea}
+
+Let $f-g=p_1^{s}$, $f=\ell^{j}$, $f+g=p_2^{t}$. The hypotheses force
+$p_1\equiv p_2\equiv 3 \pmod 8$ and $\ell\equiv 3 \pmod 4$. For $n=1$,
+quadratic characters modulo $\ell$, $p_2$ and $p_1$ make $x$, $z$ and $y$ even,
+and a difference-of-squares factorization shows that $(f+g)^X-(f-g)^X$ or
+$a^X-1$ is a power of $2$, which forces $X=1$. For $n>1$,
+Theorem~\ref{thm:red} leaves two configurations. If $y<z<x$, characters modulo
+$p_1$ and $p_2$ force $z$ even and the cofactor of $b^y$ coprime to $n$ to be a
+square; then a power of $v=f+g$, where $v^2>c$, would have to divide a
+difference of squares $(c^{w})^2-B^2$ too often. If $x<z<y$, the cofactor of
+$a^x$ is a fourth power $D^4$ and $z=2Z$ is even, so $f^{y}$ divides
+$c^{Z}+D^{2}$, making $-1$ a square modulo $\ell\equiv 3 \pmod 4$, which is
+impossible.
+
+\subsection*{Further results for $n>1$ in Lu's family}
+
+For $(a,b,c)=(4k^2-1,4k,4k^2+1)$ and $n>1$ the repository also proves that
+there is no solution with $x<z<y$ when $k\equiv 2 \pmod 4$ and $2k\pm 1$ are
+prime powers, and none with $y<z<x$ when $k=2p^\alpha$ with $p$ an odd prime,
+$\alpha$ odd, $p^\alpha\not\equiv 1 \pmod 8$ and $p^\alpha\ne 3$; together
+these give the conjecture for all $n$ when $k=14$ and $k=54$. We make no
+novelty claim for these: the second statement is contained in
+Fujita--Le~\cite{FL} for $k\ge 49$, and a recent paper of Deng and
+Huang~\cite{DH26} on exactly this family, which we could not access, may cover
+the rest.
 
 \section{Verification}
 
@@ -217,6 +311,10 @@ prime conjecture. \\
 \begin{itemize}
 \item \textbf{Nothing open is solved.} Every conjecture in the repository,
 including Conjecture~\ref{conj}, remains unproved.
+\item \textbf{Novelty is not certified.} The only result offered as possibly
+new is the $n>1$ part of Theorem~\ref{thm:crit}, within the limits stated in
+Section~\ref{sec:crit}. It uses the standard elementary methods of this
+literature and is a new case, not a new technique.
 \item \textbf{Numerical checks are evidence only.} The Goldbach and Legendre
 verifications cover ranges far below those in the published literature.
 \item \textbf{Statement fidelity.} Mathlib has no Sobolev spaces. The hot spots
@@ -281,6 +379,29 @@ conjecture of Je\'smanowicz, arXiv:1706.05480.
 
 \bibitem{note} A note on Je\'smanowicz' conjecture for non-primitive
 Pythagorean triples, arXiv:2102.10921.
+
+\bibitem{Miy09} T. Miyazaki, On the conjecture of Je\'smanowicz concerning
+Pythagorean triples, \emph{Bull. Aust. Math. Soc.} \textbf{80} (2009),
+413--422.
+
+\bibitem{Le99} M.-H. Le, A note on Je\'smanowicz' conjecture concerning
+Pythagorean triples, \emph{Bull. Austral. Math. Soc.} \textbf{59} (1999),
+477--480.
+
+\bibitem{FL} Y. Fujita and M. Le, A note on Je\'smanowicz' conjecture
+concerning nonprimitive Pythagorean triples, \emph{Bull. Aust. Math. Soc.}
+\textbf{104} (2021), 29--39.
+
+\bibitem{Guan} X. G. Guan, The Diophantine equation $(na)^x+(nb)^y=(nc)^z$
+($c=65,89,101$) (Chinese), \emph{J. Anhui Univ.} \textbf{45} (2021), 20--27.
+
+\bibitem{Deng26} N.-J. Deng, On the Diophantine equation
+$(an)^x+(bn)^y=(cn)^z$, \emph{JP J. Algebra Number Theory Appl.} \textbf{65}(2)
+(2026), 361--375.
+
+\bibitem{DH26} N.-J. Deng and R. Huang, Diophantine equation
+$((4k^2-1)n)^x+(4kn)^y=((4k^2+1)n)^z$, \emph{Journal of Mathematics} (2026),
+Art.~3566998, doi:10.1155/jom/3566998.
 
 \end{thebibliography}
 
