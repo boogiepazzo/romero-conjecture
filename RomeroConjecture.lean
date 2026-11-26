@@ -10,3 +10,4 @@ import RomeroConjecture.JesmanowiczDemjanenko
 import RomeroConjecture.PrimeTuples
 import RomeroConjecture.JesmanowiczLuAllN
 import RomeroConjecture.JesmanowiczNew
+import RomeroConjecture.JesmanowiczCriterion

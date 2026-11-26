@@ -77,6 +77,14 @@ differences are given in brackets.
 
 ## Novelty assessment (read this before citing the result as new)
 
+CORRECTION (2026-11-26, after an adversarial literature check; supersedes the text below where
+they disagree). The all-`n` statement for (33, 56, 65) is KNOWN: N.-J. Deng, JP J. Algebra Number
+Theory Appl. 65(2) (2026) 361-375, Lemma 2.3, states the conjecture for every primitive triple
+with max ≤ 101 and all `n`, citing X. G. Guan, J. Anhui Univ. 45 (2021) 20-27 (c = 65, 89, 101).
+Guan's paper itself was not obtained. The all-`n` statement for (57, 176, 185) was still NOT
+FOUND in the literature (c = 185 is beyond that range); this is not a certificate of novelty.
+
+
 Claim made here, and nothing stronger: **the all-`n` statements for `(33, 56, 65)` and
 `(57, 176, 185)` were NOT FOUND in the literature that was searched.** This is not a
 certificate of novelty. The method is the standard one of this literature (Deng–Cohen

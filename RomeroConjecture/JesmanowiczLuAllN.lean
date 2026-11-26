@@ -78,6 +78,17 @@ divides `n`; `k ≡ 2 (mod 4)` forces `π ≡ 3, 5 (mod 8)`. Modulo `4k`: `q ≡
 
 ## Novelty assessment (read the caveat)
 
+CORRECTION (2026-11-26, after an adversarial literature check; supersedes the text below where
+they disagree). (1) Y. Fujita and M. Le, Bull. Aust. Math. Soc. 104 (2021) 29-39, Thm 1.2, prove
+that for n > 1 and k ≥ 49 there is no solution with y < z < x, with no arithmetic hypothesis on
+k. So `lu_no_solution_y_lt_z_lt_x` is KNOWN for k ≥ 49 and possibly new only for
+k ∈ {10, 14, 22, 26, 38, 46}; and the y < z < x half of the k = 54 triple is known.
+(2) N.-J. Deng and R. Huang, Journal of Mathematics (Wiley) 2026, Art. 3566998,
+DOI 10.1155/jom/3566998, treat exactly this family for n > 1 "under some conditions"; the full
+text could not be accessed, so it may cover `lu_no_solution_x_lt_z_lt_y` and the k = 14, 54
+triples. No novelty should be claimed for anything in this file until that paper is read.
+
+
 CAVEAT. "Apparently new" below means only: NOT FOUND in the sources listed here, after a
 limited search (about a dozen web searches / documents, November 2026). It is NOT a certified
 novelty claim. The literature on this conjecture is large and partly in Chinese-language
